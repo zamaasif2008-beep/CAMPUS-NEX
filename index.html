@@ -1,0 +1,1503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CAMPUS NEX - Ultimate Student Companion</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  * { transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease; }
+  
+  /* Animations */
+  .rmp-enter { animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+  @keyframes fadeInUp { from { opacity: 0; transform: translateY(12px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+  .rmp-float { display: inline-block; animation: float 3s ease-in-out infinite; }
+  @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+
+  .rmp-pulse-glow { animation: pulseGlow 2s infinite; }
+  @keyframes pulseGlow { 0%, 100% { box-shadow: 0 0 0 0 rgba(234, 88, 12, 0.4); } 50% { box-shadow: 0 0 0 10px rgba(234, 88, 12, 0); } }
+
+  .rmp-slide-up { animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
+  @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+  .rmp-card { transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+  .rmp-card:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(234, 88, 12, 0.1), 0 8px 10px -6px rgba(234, 88, 12, 0.05); }
+
+  .rmp-btn { transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  .rmp-btn:active { transform: scale(0.94); }
+
+  .rmp-confetti { position: fixed; width: 8px; height: 8px; border-radius: 50%; pointer-events: none; z-index: 999; animation: confettiPop 1.2s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
+  @keyframes confettiPop {
+    0% { transform: translate(0, 0) scale(1) rotate(0deg); opacity: 1; }
+    100% { transform: translate(var(--x), var(--y)) scale(0) rotate(var(--r)); opacity: 0; }
+  }
+
+  .rmp-toast { position: fixed; bottom: 20px; right: 20px; background: #0f172a; color: white; padding: 12px 20px; border-radius: 16px; font-size: 13px; font-weight: 600; z-index: 100; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3); animation: toastIn 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
+  .rmp-toast.rmp-out { opacity: 0; transform: translateY(15px) scale(0.95); transition: all 0.3s ease; }
+  @keyframes toastIn { from { opacity: 0; transform: translateY(20px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+  .dark { background-color: #0f172a !important; color: #f8fafc !important; }
+  .dark header, .dark nav, .dark .bg-white { background-color: #1e293b !important; color: #f8fafc !important; border-color: #334155 !important; }
+  .dark .text-slate-900, .dark .text-slate-800, .dark .text-slate-700 { color: #f1f5f9 !important; }
+  .dark .text-slate-600, .dark .text-slate-500 { color: #94a3b8 !important; }
+  .dark .bg-slate-50, .dark .bg-slate-100 { background-color: #334155 !important; }
+
+  /* Logo: follows the app's dark toggle (not the OS setting) */
+  .logo-box { background-color: #0f172a; color: #ffffff; }
+  .dark .logo-box { background-color: #ffffff !important; color: #0f172a !important; }
+</style>
+</head>
+<body class="rmp bg-[#FFF9F5] text-slate-800 min-h-screen flex flex-col font-['Plus_Jakarta_Sans']">
+
+<header class="bg-white border-b border-orange-100 sticky top-0 z-40 shadow-sm backdrop-blur-md bg-white/90">
+  <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+    <div class="flex items-center space-x-3">
+      <!-- CN Vector Logo -->
+      <div class="logo-box h-10 w-10 rounded-2xl flex items-center justify-center p-1.5 shadow-md shrink-0 transition-transform duration-300 hover:rotate-6 hover:scale-105">
+        <svg viewBox="0 0 100 100" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+          <ellipse cx="50" cy="55" rx="45" ry="12" fill="none" stroke="currentColor" stroke-width="6" transform="rotate(-15 50 55)"/>
+          <path d="M 65 25 A 35 35 0 1 0 65 75" fill="none" stroke="currentColor" stroke-width="12" stroke-linecap="round"/>
+          <path d="M 50 35 L 50 65 L 75 35 L 75 65" fill="none" stroke="currentColor" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M 32 50 L 32 60 L 42 60 L 42 50 Z M 37 42 L 32 47 L 42 47 Z" fill="currentColor"/>
+        </svg>
+      </div>
+      <div>
+        <h1 class="text-lg font-bold text-slate-900 leading-tight tracking-tight">CAMPUS NEX Hub</h1>
+        <p class="text-xs text-orange-600 font-semibold">Campus Companion</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <p id="header-quote" class="hidden md:block text-xs text-slate-600 italic pl-4 border-l border-slate-200 max-w-md"></p>
+      <div class="relative shrink-0">
+        <button id="avatar-btn" onclick="changeAvatar()" aria-label="Change profile photo" class="rmp-btn w-9 h-9 rounded-full overflow-hidden bg-orange-100 text-lg flex items-center justify-center shadow-sm hover:ring-2 hover:ring-orange-400">👤</button>
+        <button id="avatar-del" onclick="removeAvatar()" aria-label="Remove profile photo" class="hidden absolute -top-1 -right-1 w-4 h-4 rounded-full bg-slate-900 text-white text-[9px] leading-none hover:bg-rose-600">✕</button>
+      </div>
+      <button id="dark-btn" onclick="toggleDark()" aria-label="Toggle dark mode" class="rmp-btn w-9 h-9 rounded-xl bg-slate-100 text-lg shrink-0 hover:bg-slate-200">🌙</button>
+      <button onclick="logout()" aria-label="Log out" title="Log out" class="rmp-btn h-9 px-3 rounded-xl bg-slate-900 text-white text-xs font-bold shrink-0 hover:bg-rose-600">Log out</button>
+    </div>
+  </div>
+</header>
+
+<nav class="bg-white border-b border-slate-100 overflow-x-auto" aria-label="Main sections">
+  <div class="max-w-7xl mx-auto px-4 flex space-x-2 py-2" role="tablist" id="tab-bar"></div>
+</nav>
+
+<main class="max-w-7xl mx-auto px-4 py-6 flex-1 w-full">
+
+  <!-- HOME DASHBOARD -->
+  <section id="section-home" class="space-y-6">
+    <!-- Hero -->
+    <div class="bg-gradient-to-br from-slate-900 via-slate-800 to-orange-700 text-white p-6 sm:p-8 rounded-3xl shadow-lg relative overflow-hidden">
+      <div class="absolute -right-16 -top-16 w-64 h-64 bg-orange-500/20 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="relative flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <p id="home-date" class="text-xs text-orange-200 font-semibold uppercase tracking-wider"></p>
+          <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight mt-1"><span id="home-greet"></span>, <span id="home-name"></span> <span class="rmp-float">👋</span></h2>
+          <p id="home-sub" class="text-slate-300 text-sm mt-1 font-medium"></p>
+        </div>
+        <div class="flex gap-2 flex-wrap">
+          <button onclick="switchTab('canteen')" class="rmp-btn bg-orange-500 text-white px-4 py-2.5 rounded-xl text-xs font-bold hover:bg-orange-600 shadow-md">🍔 Order food</button>
+          <button onclick="toggleProfileEdit()" class="rmp-btn bg-white/10 border border-white/20 text-white px-4 py-2.5 rounded-xl text-xs font-bold hover:bg-white/20">✏️ Edit profile</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit profile form -->
+    <div id="profile-edit" class="hidden bg-white p-5 rounded-3xl border border-orange-100 shadow-sm space-y-3">
+      <h3 class="font-bold text-slate-900 text-sm">Edit student details</h3>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+        <input id="pf-name" placeholder="Full name" aria-label="Full name" class="px-3 py-2 rounded-xl border border-slate-200">
+        <input id="pf-roll" placeholder="Roll number" aria-label="Roll number" class="px-3 py-2 rounded-xl border border-slate-200">
+        <select id="pf-dept" aria-label="Department" class="px-3 py-2 rounded-xl border border-slate-200 bg-white"><option>CSE Core</option><option>CSE AIML</option><option>IT</option><option>ECE</option></select>
+        <select id="pf-year" aria-label="Year" class="px-3 py-2 rounded-xl border border-slate-200 bg-white"><option>1st Year</option><option>2nd Year</option><option>3rd Year</option><option>4th Year</option></select>
+        <select id="pf-sec" aria-label="Section" class="px-3 py-2 rounded-xl border border-slate-200 bg-white"><option>Section A</option><option>Section B</option><option>Section C</option><option>Section D</option></select>
+        <select id="pf-mode" aria-label="Residence" class="px-3 py-2 rounded-xl border border-slate-200 bg-white"><option>Hostel</option><option>Day Scholar</option></select>
+        <input id="pf-email" type="email" placeholder="Email" aria-label="Email" class="px-3 py-2 rounded-xl border border-slate-200">
+        <input id="pf-mentor" placeholder="Mentor name" aria-label="Mentor" class="px-3 py-2 rounded-xl border border-slate-200">
+      </div>
+      <button onclick="saveProfile()" class="rmp-btn bg-orange-600 text-white px-5 py-2 rounded-xl text-xs font-semibold hover:bg-orange-700 shadow-sm">Save details</button>
+    </div>
+
+    <!-- KPI cards -->
+    <div id="home-stats" class="grid grid-cols-2 lg:grid-cols-4 gap-4"></div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Student profile -->
+      <div class="bg-white p-6 rounded-3xl border border-orange-100 shadow-sm space-y-4">
+        <h3 class="font-bold text-slate-900">Student profile</h3>
+        <div id="home-profile"></div>
+      </div>
+      <!-- Attendance -->
+      <div class="bg-white p-6 rounded-3xl border border-orange-100 shadow-sm space-y-4 lg:col-span-2">
+        <div class="flex items-center justify-between flex-wrap gap-2">
+          <h3 class="font-bold text-slate-900">Attendance tracker</h3>
+          <span id="home-att-badge" class="text-xs font-bold px-3 py-1 rounded-full border"></span>
+        </div>
+        <div id="home-attendance" class="space-y-3"></div>
+        <p class="text-[11px] text-slate-400">Tap ✓ or ✕ after each class to keep your attendance up to date.</p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div class="bg-white p-6 rounded-3xl border border-orange-100 shadow-sm space-y-3">
+        <h3 class="font-bold text-slate-900">📅 Today's schedule</h3>
+        <div id="home-schedule" class="space-y-2"></div>
+      </div>
+      <div class="bg-white p-6 rounded-3xl border border-orange-100 shadow-sm space-y-3">
+        <h3 class="font-bold text-slate-900">⏳ Upcoming exams</h3>
+        <div id="home-exams" class="space-y-2"></div>
+      </div>
+      <div class="bg-white p-6 rounded-3xl border border-orange-100 shadow-sm space-y-3">
+        <h3 class="font-bold text-slate-900">⚡ Quick actions</h3>
+        <div id="home-actions" class="grid grid-cols-2 gap-2"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BREAK BITE (CANTEEN) -->
+  <section id="section-canteen" class="space-y-6 hidden">
+    <div class="bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 text-white p-6 rounded-3xl shadow-lg relative overflow-hidden">
+      <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
+      <h2 class="text-2xl font-extrabold tracking-tight">Break bite CAMPUS NEX <span class="rmp-float">🍔</span></h2>
+      <p class="text-orange-100 text-sm mt-1 max-w-xl font-medium">Order ahead for short breaks. Skip the queue with Express Pickup.</p>
+    </div>
+    <div class="flex flex-col sm:flex-row gap-3">
+      <input id="food-search" type="search" placeholder="Search food..." aria-label="Search food" class="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/50 shadow-sm">
+      <div id="stall-chips" class="flex gap-2 overflow-x-auto pb-1"></div>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4" id="canteen-items-grid"></div>
+  </section>
+
+  <!-- BUS RADAR -->
+  <section id="section-bus" class="space-y-6 hidden">
+    <div class="bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white p-6 rounded-3xl shadow-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div>
+        <h2 class="text-2xl font-bold tracking-tight">Bus radar & Seat Tracker <span class="rmp-float">🚌</span></h2>
+        <p class="text-blue-100 text-sm mt-1 font-medium">Live GPS route tracking, occupancy status and ETA for day scholars.</p>
+      </div>
+      <button onclick="simulateDriverMove()" class="rmp-btn bg-white text-blue-700 px-4 py-2.5 rounded-xl text-xs font-bold hover:bg-blue-50 shadow-md">Simulate driver GPS move 📍</button>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="bg-white p-6 rounded-3xl border border-orange-100 shadow-sm space-y-4">
+        <h3 class="font-bold text-slate-900">Select bus route</h3>
+        <div class="space-y-3" id="bus-routes-list"></div>
+      </div>
+      <div class="bg-white p-6 rounded-3xl border border-orange-100 shadow-sm space-y-4 md:col-span-2">
+        <div class="flex items-center justify-between gap-2 flex-wrap">
+          <h3 id="active-bus-title" class="font-bold text-slate-900"></h3>
+          <span id="active-bus-status" class="text-xs font-semibold px-3 py-1 rounded-full border"></span>
+        </div>
+        <div class="bg-slate-900 text-white p-6 rounded-2xl space-y-4 shadow-inner">
+          <div class="flex justify-between text-xs text-slate-400 font-medium"><span id="bus-start"></span><span class="text-orange-400 font-bold animate-pulse flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-orange-500 rmp-pulse-glow"></span>Live bus movement</span><span>CAMPUS NEX</span></div>
+          <div class="relative h-2 bg-slate-700 rounded-full mt-5">
+            <div id="bus-progress" class="h-full bg-gradient-to-r from-orange-500 to-amber-400 rounded-full transition-all duration-700" style="width:0%"></div>
+            <span id="bus-icon" class="absolute -top-4 text-xl transition-all duration-700 transform -translate-x-1/2 drop-shadow-md" style="left:0%">🚌</span>
+          </div>
+          <div class="bg-slate-800/80 p-4 rounded-xl border border-slate-700/60 flex items-center justify-between">
+            <div><p class="text-xs text-slate-400 font-medium">Current location</p><p id="bus-current-stop" class="font-bold text-sm mt-0.5 text-slate-100"></p></div>
+            <div class="text-right"><p class="text-xs text-slate-400 font-medium">Seat occupancy</p><span id="bus-occupancy-badge" class="text-white font-bold text-xs px-2.5 py-1 rounded-lg inline-block mt-0.5 shadow-sm"></span></div>
+          </div>
+        </div>
+        <div class="p-4 bg-orange-50/80 rounded-2xl border border-orange-200 space-y-3">
+          <p class="text-xs font-bold text-orange-950">On this bus right now? Update Seat Radar for your friends:</p>
+          <div class="grid grid-cols-3 gap-2">
+            <button onclick="updateSeatRadar('green')" class="rmp-btn bg-emerald-600 text-white py-2 rounded-xl text-xs font-semibold hover:bg-emerald-700 shadow-sm">🟢 Plenty of seats</button>
+            <button onclick="updateSeatRadar('yellow')" class="rmp-btn bg-amber-500 text-white py-2 rounded-xl text-xs font-semibold hover:bg-amber-600 shadow-sm">🟡 Standing only</button>
+            <button onclick="updateSeatRadar('red')" class="rmp-btn bg-rose-600 text-white py-2 rounded-xl text-xs font-semibold hover:bg-rose-700 shadow-sm">🔴 Full</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOSTEL & MESS MIND -->
+  <section id="section-hostel" class="space-y-6 hidden">
+    <div id="hostel-login-box" class="max-w-md mx-auto bg-white p-8 rounded-3xl shadow-sm border border-orange-100 space-y-4">
+      <div class="text-center">
+        <div class="bg-orange-100 w-12 h-12 rounded-2xl flex items-center justify-center mx-auto text-xl mb-2"><span class="rmp-float">🏠</span></div>
+        <h3 class="text-xl font-bold text-slate-900">Hostel resident login</h3>
+        <p class="text-xs text-slate-500">Outpasses, maintenance, mess mind and laundry</p>
+      </div>
+      <div class="space-y-3">
+        <div><label for="hostel-id" class="text-xs font-semibold text-slate-600">Hostel ID</label>
+          <input type="text" id="hostel-id" value="HST101" autocomplete="off" class="w-full mt-1 px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-orange-500/50"></div>
+        <div><label for="hostel-pass" class="text-xs font-semibold text-slate-600">Password</label>
+          <input type="password" id="hostel-pass" value="hostel123" class="w-full mt-1 px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-orange-500/50"></div>
+        <button onclick="loginHostel()" class="rmp-btn w-full bg-orange-600 text-white font-semibold py-3 rounded-xl shadow-md hover:bg-orange-700">Log in</button>
+        <p class="text-[11px] text-center text-slate-400">Demo login: HST101 / hostel123</p>
+      </div>
+    </div>
+
+    <div id="hostel-dashboard" class="space-y-6 hidden">
+      <div class="flex items-center justify-between bg-white p-4 rounded-2xl border border-orange-100 shadow-sm">
+        <div><h3 class="font-bold text-slate-900">Welcome, resident (HST101)</h3>
+          <p class="text-xs text-slate-500">Block A, Room 304 | Status: <span class="text-emerald-600 font-semibold">Checked in</span></p></div>
+        <button onclick="logoutHostel()" class="rmp-btn text-xs bg-slate-100 text-slate-700 px-3 py-1.5 rounded-xl font-semibold hover:bg-slate-200">Log out</button>
+      </div>
+
+      <!-- MESS MIND -->
+      <div class="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 text-white p-6 rounded-3xl shadow-lg space-y-4">
+        <div class="flex justify-between items-center flex-wrap gap-2">
+          <div>
+            <h3 class="text-xl font-bold flex items-center gap-2">Mess Mind 🍲 <span class="text-xs bg-emerald-800 px-2.5 py-1 rounded-full text-emerald-200 font-normal">Zero Waste Initiative</span></h3>
+            <p class="text-emerald-100 text-xs mt-0.5 font-medium">Confirm your mess attendance to prevent food preparation waste.</p>
+          </div>
+          <span id="mess-savings" class="bg-white/20 backdrop-blur-md px-3 py-1.5 rounded-xl text-xs font-semibold border border-white/10">🌱 Meals Saved: 0</span>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1" id="mess-meal-grid"></div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-white p-6 rounded-3xl border border-orange-100 shadow-sm space-y-4">
+          <h4 class="font-bold text-slate-900">Digital outpass</h4>
+          <input type="text" id="outpass-reason" placeholder="Reason (e.g. Going home for the weekend)" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 focus:ring-2 focus:ring-orange-500/50">
+          <button onclick="requestOutpass()" class="rmp-btn w-full bg-orange-600 text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-orange-700 shadow-sm">Request outpass</button>
+          <div class="p-4 bg-orange-50/80 rounded-2xl border border-orange-200 space-y-2 text-xs">
+            <p class="font-semibold text-orange-950">Status: <span id="outpass-status" class="text-slate-700 font-medium">No active outpass</span></p>
+            <div id="qrcode-outpass" class="flex justify-center py-2"></div>
+          </div>
+        </div>
+        <div class="bg-white p-6 rounded-3xl border border-orange-100 shadow-sm space-y-4">
+          <h4 class="font-bold text-slate-900">Maintenance & laundry</h4>
+          <div>
+            <label for="maintenance-issue" class="text-xs font-semibold text-slate-600">Report a maintenance issue</label>
+            <div class="flex space-x-2 mt-1">
+              <input type="text" id="maintenance-issue" placeholder="e.g. AC leaking / fused light" class="flex-1 px-3 py-2 text-sm rounded-xl border border-slate-200 focus:ring-2 focus:ring-orange-500/50">
+              <button onclick="submitMaintenance()" class="rmp-btn bg-slate-900 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-slate-800">Report</button>
+            </div>
+            <ul id="ticket-list" class="mt-2 text-xs text-slate-600 space-y-1"></ul>
+          </div>
+          <div class="pt-2 border-t border-slate-100">
+            <p class="text-xs font-semibold text-slate-600">Washing machine</p>
+            <div class="flex items-center justify-between mt-1 p-3 bg-slate-50 rounded-xl text-xs">
+              <span id="laundry-text" class="font-medium text-slate-700">Block A, Machine #2 (free in 15 mins)</span>
+              <button id="laundry-btn" onclick="bookLaundry()" class="rmp-btn bg-orange-600 text-white px-3 py-1.5 rounded-lg font-semibold hover:bg-orange-700 shadow-sm">Book slot</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TIMETABLE -->
+  <section id="section-academic" class="space-y-6 hidden">
+    <div class="bg-white p-6 rounded-3xl border border-orange-100 shadow-sm space-y-4">
+      <h3 class="text-xl font-bold text-slate-900">Timetable & venues</h3>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <select id="select-dept" aria-label="Department" onchange="loadTimetable()" class="px-3 py-2.5 rounded-xl border border-slate-200 text-sm bg-white focus:ring-2 focus:ring-orange-500/50">
+          <option value="CSE Core">B.Tech CSE Core</option>
+          <option value="CSE AIML">B.Tech CSE AIML</option>
+          <option value="IT">B.Tech IT</option>
+          <option value="ECE">B.Tech ECE</option>
+        </select>
+        <select id="select-section" aria-label="Section" onchange="loadTimetable()" class="px-3 py-2.5 rounded-xl border border-slate-200 text-sm bg-white focus:ring-2 focus:ring-orange-500/50">
+          <option value="Section A">Section A</option>
+          <option value="Section B">Section B</option>
+          <option value="Section C">Section C</option>
+          <option value="Section D">Section D</option>
+        </select>
+        <button onclick="loadTimetable()" class="rmp-btn bg-orange-600 text-white font-semibold py-2.5 rounded-xl text-sm hover:bg-orange-700 shadow-sm">Refresh schedule</button>
+      </div>
+      <div id="timetable-result" class="pt-2"></div>
+    </div>
+  </section>
+
+  <!-- CAMPUS VOICE (PDF & CHAT) -->
+  <section id="section-study" class="space-y-6 hidden">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="bg-white p-6 rounded-3xl border border-orange-100 shadow-sm space-y-4">
+        <h3 class="text-lg font-bold text-slate-900">DocClean & SlideTrim (PDF maker)</h3>
+        <div>
+          <label for="pdf-code-input" class="text-xs font-semibold text-slate-600">Assignment code or notes</label>
+          <textarea id="pdf-code-input" rows="6" placeholder="Paste your code or notes here..." class="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-slate-200 font-mono focus:ring-2 focus:ring-orange-500/50"></textarea>
+        </div>
+        <div class="flex space-x-2">
+          <button onclick="generatePDF('assignment')" class="rmp-btn flex-1 bg-orange-600 text-white py-2.5 rounded-xl text-xs font-semibold hover:bg-orange-700 shadow-sm">Download assignment PDF</button>
+          <button onclick="generatePDF('summary')" class="rmp-btn flex-1 bg-slate-900 text-white py-2.5 rounded-xl text-xs font-semibold hover:bg-slate-800 shadow-sm">Download exam summary</button>
+        </div>
+      </div>
+
+      <div class="bg-white p-6 rounded-3xl border border-orange-100 shadow-sm flex flex-col h-[440px] space-y-3">
+        <div class="flex items-center justify-between">
+          <h3 class="text-lg font-bold text-slate-900">Campus voice chat</h3>
+          <span id="chat-filter-badge" class="text-[10px] bg-orange-50 text-orange-700 px-2.5 py-1 rounded-full font-semibold border border-orange-200"></span>
+        </div>
+        <div class="grid grid-cols-3 gap-2 text-xs">
+          <select id="chat-year" aria-label="Year" onchange="filterChat()" class="px-2 py-1.5 rounded-lg border border-slate-200 bg-white"><option>1st Year</option><option>2nd Year</option><option>3rd Year</option><option>4th Year</option></select>
+          <select id="chat-course" aria-label="Course" onchange="filterChat()" class="px-2 py-1.5 rounded-lg border border-slate-200 bg-white"><option>CSE Core</option><option>CSE AIML</option><option>IT</option></select>
+          <select id="chat-sec" aria-label="Section" onchange="filterChat()" class="px-2 py-1.5 rounded-lg border border-slate-200 bg-white"><option>Section C</option><option>Section A</option><option>Section B</option></select>
+        </div>
+        <div id="chat-messages" class="flex-1 overflow-y-auto space-y-2 pr-1 text-xs bg-slate-50 p-3 rounded-2xl border border-slate-100" aria-live="polite"></div>
+        <div class="flex space-x-2">
+          <input type="text" id="chat-input" maxlength="300" placeholder="Type a message..." aria-label="Message" class="flex-1 px-3 py-2 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-orange-500/50">
+          <button onclick="sendChatMessage()" class="rmp-btn bg-orange-600 text-white px-4 py-2 rounded-xl text-xs font-semibold hover:bg-orange-700 shadow-sm">Send</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FINANCE -->
+  <section id="section-finance" class="space-y-6 hidden">
+    <div class="bg-white p-6 rounded-3xl border border-orange-100 shadow-sm space-y-4">
+      <div class="flex items-center justify-between flex-wrap gap-2">
+        <div><h3 class="text-xl font-bold text-slate-900">PayTrack CAMPUS NEX ledger</h3>
+          <p class="text-xs text-slate-500">Tuition, canteen, library fines and dues. Saved in this browser.</p></div>
+        <button onclick="toggleExpenseForm()" class="rmp-btn bg-orange-600 text-white px-4 py-2 rounded-xl text-xs font-semibold hover:bg-orange-700 shadow-sm">+ Add expense</button>
+      </div>
+      <form id="expense-form" class="hidden grid grid-cols-2 sm:grid-cols-5 gap-2 p-3 bg-orange-50/80 rounded-2xl border border-orange-200" onsubmit="addExpense(event)">
+        <input id="exp-cat" required placeholder="Category" aria-label="Category" class="px-3 py-2 rounded-xl border border-slate-200 text-xs">
+        <input id="exp-desc" placeholder="Description" aria-label="Description" class="px-3 py-2 rounded-xl border border-slate-200 text-xs">
+        <input id="exp-amt" required type="number" min="1" step="any" placeholder="Amount (₹)" aria-label="Amount" class="px-3 py-2 rounded-xl border border-slate-200 text-xs">
+        <select id="exp-method" aria-label="Method" class="px-3 py-2 rounded-xl border border-slate-200 text-xs bg-white"><option>UPI</option><option>Cash</option><option>Net Banking</option><option>Card</option></select>
+        <button class="rmp-btn bg-slate-900 text-white rounded-xl text-xs font-semibold py-2 hover:bg-slate-800">Save</button>
+      </form>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="p-4 bg-orange-50/80 rounded-2xl border border-orange-200"><p class="text-xs text-orange-900 font-semibold">Total semester expenses</p><p class="text-2xl font-extrabold text-orange-950 mt-1" id="ledger-total"></p></div>
+        <div class="p-4 bg-emerald-50/80 rounded-2xl border border-emerald-200"><p class="text-xs text-emerald-900 font-semibold">Pending dues</p><p class="text-2xl font-extrabold text-emerald-950 mt-1">₹0</p></div>
+        <div class="p-4 bg-blue-50/80 rounded-2xl border border-blue-200"><p class="text-xs text-blue-900 font-semibold">Receipts saved</p><p class="text-2xl font-extrabold text-blue-950 mt-1" id="receipt-count"></p></div>
+      </div>
+      <div id="spend-chart" class="space-y-2 p-4 bg-slate-50 rounded-2xl border border-slate-100 hidden"></div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-slate-50 text-slate-600 font-semibold"><tr><th class="p-3">Category</th><th class="p-3">Description</th><th class="p-3">Date</th><th class="p-3">Method</th><th class="p-3">Amount</th><th class="p-3">Receipt</th><th class="p-3"><span class="sr-only">Delete</span></th></tr></thead>
+          <tbody id="ledger-tbody" class="divide-y divide-slate-100"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- STUDENT TOOLS -->
+  <section id="section-tools" class="space-y-6 hidden">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="bg-white p-6 rounded-3xl border border-orange-100 shadow-sm space-y-3">
+        <h3 class="text-lg font-bold text-slate-900">Attendance calculator</h3>
+        <div class="grid grid-cols-3 gap-2">
+          <div><label for="att-a" class="text-xs font-semibold text-slate-600">Attended</label><input id="att-a" type="number" min="0" oninput="calcAttendance()" class="w-full mt-1 px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-orange-500/50"></div>
+          <div><label for="att-h" class="text-xs font-semibold text-slate-600">Held</label><input id="att-h" type="number" min="0" oninput="calcAttendance()" class="w-full mt-1 px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-orange-500/50"></div>
+          <div><label for="att-t" class="text-xs font-semibold text-slate-600">Target %</label><input id="att-t" type="number" value="75" min="1" max="99" oninput="calcAttendance()" class="w-full mt-1 px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-orange-500/50"></div>
+        </div>
+        <p id="att-out" class="text-sm p-3 rounded-xl bg-orange-50/80 border border-orange-200 text-slate-800 font-medium">Enter your classes attended and held.</p>
+      </div>
+
+      <div class="bg-white p-6 rounded-3xl border border-orange-100 shadow-sm space-y-3">
+        <div class="flex items-center justify-between"><h3 class="text-lg font-bold text-slate-900">GPA calculator</h3>
+          <button onclick="addCourse()" class="rmp-btn text-xs bg-slate-900 text-white px-3 py-1.5 rounded-xl font-semibold hover:bg-slate-800">+ Subject</button></div>
+        <div id="course-rows" class="space-y-2"></div>
+        <p id="gpa-out" class="text-sm font-bold p-3 rounded-xl bg-orange-50/80 border border-orange-200 text-orange-950"></p>
+        <p class="text-[11px] text-slate-400">Grade points: O=10, A+=9, A=8, B+=7, B=6, C=5, F=0.</p>
+      </div>
+
+      <div class="bg-white p-6 rounded-3xl border border-orange-100 shadow-sm space-y-3">
+        <h3 class="text-lg font-bold text-slate-900">Exam countdown</h3>
+        <div class="flex gap-2">
+          <input id="exam-name" placeholder="Exam name" aria-label="Exam name" class="flex-1 min-w-0 px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-orange-500/50">
+          <input id="exam-date" type="date" aria-label="Exam date" class="px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-orange-500/50">
+          <button onclick="addExam()" class="rmp-btn bg-orange-600 text-white px-3 rounded-xl text-sm font-semibold hover:bg-orange-700">Add</button>
+        </div>
+        <ul id="exam-list" class="space-y-2 text-xs"></ul>
+      </div>
+
+      <div class="bg-white p-6 rounded-3xl border border-orange-100 shadow-sm space-y-3">
+        <h3 class="text-lg font-bold text-slate-900">To-do list</h3>
+        <div class="flex gap-2">
+          <input id="todo-text" placeholder="e.g. Submit DS record" aria-label="Task" class="flex-1 px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-orange-500/50">
+          <button onclick="addTodo()" class="rmp-btn bg-orange-600 text-white px-3 rounded-xl text-sm font-semibold hover:bg-orange-700">Add</button>
+        </div>
+        <ul id="todo-list" class="space-y-2 text-xs"></ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROB BOX (ADD PROBLEM / IDEA) -->
+  <section id="section-submit" class="space-y-6 hidden">
+    <div class="max-w-xl mx-auto bg-white p-8 rounded-3xl border border-orange-100 shadow-sm space-y-4">
+      <div class="text-center">
+        <div class="bg-orange-100 w-12 h-12 rounded-2xl flex items-center justify-center mx-auto text-xl mb-2"><span class="rmp-float">💡</span></div>
+        <h3 class="text-xl font-bold text-slate-900">Prob box - Campus Ideas</h3>
+        <p class="text-xs text-slate-500">Describe a problem on campus and how you would fix it.</p>
+      </div>
+      <div class="space-y-3">
+        <div><label for="new-title" class="text-xs font-semibold text-slate-600">Title</label>
+          <input type="text" id="new-title" placeholder="e.g. Library desk booking" class="w-full mt-1 px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-orange-500/50"></div>
+        <div><label for="new-category" class="text-xs font-semibold text-slate-600">Category</label>
+          <select id="new-category" class="w-full mt-1 px-4 py-2.5 rounded-xl border border-slate-200 text-sm bg-white focus:ring-2 focus:ring-orange-500/50"><option>Food & Dining</option><option>Bus & Commute</option><option>Hostel Ops</option><option>Academics & Study</option></select></div>
+        <div><label for="new-desc" class="text-xs font-semibold text-slate-600">Problem and solution</label>
+          <textarea id="new-desc" rows="3" placeholder="What problem does this solve?" class="w-full mt-1 px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-orange-500/50"></textarea></div>
+        <button onclick="submitNewIdea()" class="rmp-btn w-full bg-orange-600 text-white font-semibold py-3 rounded-xl shadow-md hover:bg-orange-700">Add idea to Prob box</button>
+      </div>
+      <div id="idea-list" class="space-y-2 pt-2"></div>
+    </div>
+  </section>
+</main>
+
+<!-- AUTH SCREEN -->
+<div id="auth-screen" class="hidden fixed inset-0 z-[200] bg-gradient-to-br from-slate-900 via-slate-800 to-orange-700 overflow-y-auto p-4">
+  <div class="min-h-full flex items-center justify-center">
+    <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl p-7 space-y-5">
+      <div class="text-center space-y-1">
+        <div class="logo-box h-14 w-14 mx-auto rounded-2xl flex items-center justify-center p-2 shadow-md">
+          <svg viewBox="0 0 100 100" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+            <ellipse cx="50" cy="55" rx="45" ry="12" fill="none" stroke="currentColor" stroke-width="6" transform="rotate(-15 50 55)"/>
+            <path d="M 65 25 A 35 35 0 1 0 65 75" fill="none" stroke="currentColor" stroke-width="12" stroke-linecap="round"/>
+            <path d="M 50 35 L 50 65 L 75 35 L 75 65" fill="none" stroke="currentColor" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M 32 50 L 32 60 L 42 60 L 42 50 Z M 37 42 L 32 47 L 42 47 Z" fill="currentColor"/>
+          </svg>
+        </div>
+        <h2 class="text-xl font-extrabold text-slate-900 tracking-tight">CAMPUS NEX</h2>
+        <p class="text-xs text-slate-500">Sign in to open your campus companion</p>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2 bg-slate-100 p-1 rounded-2xl">
+        <button id="auth-tab-login" onclick="showAuthTab('login')" class="rmp-btn py-2 rounded-xl text-xs font-bold">Log in</button>
+        <button id="auth-tab-register" onclick="showAuthTab('register')" class="rmp-btn py-2 rounded-xl text-xs font-bold">Create account</button>
+      </div>
+
+      <p id="auth-msg" class="hidden text-xs font-semibold p-3 rounded-xl border" role="alert"></p>
+
+      <form id="login-form" class="space-y-3" onsubmit="doLogin(event)">
+        <div><label for="li-id" class="text-xs font-semibold text-slate-600">Roll number or email</label>
+          <input id="li-id" required autocomplete="username" class="w-full mt-1 px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-orange-500/50"></div>
+        <div><label for="li-pw" class="text-xs font-semibold text-slate-600">Password</label>
+          <input id="li-pw" type="password" required autocomplete="current-password" class="w-full mt-1 px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-orange-500/50"></div>
+        <button class="rmp-btn w-full bg-orange-600 text-white font-semibold py-3 rounded-xl shadow-md hover:bg-orange-700">Log in</button>
+      </form>
+
+      <form id="register-form" class="hidden space-y-3" onsubmit="doRegister(event)">
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <input id="rg-name" required placeholder="Full name" aria-label="Full name" class="col-span-2 px-3 py-2.5 rounded-xl border border-slate-200">
+          <input id="rg-roll" required placeholder="Roll number" aria-label="Roll number" class="px-3 py-2.5 rounded-xl border border-slate-200">
+          <input id="rg-email" required type="email" placeholder="Email" aria-label="Email" class="px-3 py-2.5 rounded-xl border border-slate-200">
+          <select id="rg-dept" aria-label="Department" class="px-3 py-2.5 rounded-xl border border-slate-200 bg-white"><option>CSE Core</option><option>CSE AIML</option><option>IT</option><option>ECE</option></select>
+          <select id="rg-year" aria-label="Year" class="px-3 py-2.5 rounded-xl border border-slate-200 bg-white"><option>1st Year</option><option>2nd Year</option><option>3rd Year</option><option>4th Year</option></select>
+          <select id="rg-sec" aria-label="Section" class="px-3 py-2.5 rounded-xl border border-slate-200 bg-white"><option>Section A</option><option>Section B</option><option>Section C</option><option>Section D</option></select>
+          <select id="rg-mode" aria-label="Residence" class="px-3 py-2.5 rounded-xl border border-slate-200 bg-white"><option>Hostel</option><option>Day Scholar</option></select>
+          <input id="rg-pw" required type="password" minlength="6" autocomplete="new-password" placeholder="Password (min 6)" aria-label="Password" class="px-3 py-2.5 rounded-xl border border-slate-200">
+          <input id="rg-pw2" required type="password" minlength="6" autocomplete="new-password" placeholder="Confirm password" aria-label="Confirm password" class="px-3 py-2.5 rounded-xl border border-slate-200">
+        </div>
+        <button class="rmp-btn w-full bg-orange-600 text-white font-semibold py-3 rounded-xl shadow-md hover:bg-orange-700">Create account</button>
+      </form>
+
+      <p class="text-[11px] text-center text-slate-400">Accounts are stored only in this browser. Demo-level login, not server security.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Payment modal -->
+<div id="payment-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-50 p-4 transition-all duration-300" onclick="if(event.target===this)closeModal()" role="dialog" aria-modal="true" aria-labelledby="modal-item-title">
+  <div class="bg-white max-w-md w-full p-6 rounded-3xl space-y-4 shadow-2xl max-h-[95vh] overflow-y-auto rmp-slide-up">
+    <div class="flex items-center justify-between">
+      <h3 class="font-bold text-slate-900 text-sm" id="modal-item-title">Checkout</h3>
+      <button onclick="closeModal()" aria-label="Close" class="rmp-btn text-slate-400 hover:text-slate-600 font-bold p-1">✕</button>
+    </div>
+    <div class="flex items-center justify-between bg-slate-50 rounded-2xl p-3 text-sm border border-slate-100">
+      <div class="flex items-center gap-3">
+        <button onclick="changeQty(-1)" aria-label="Decrease" class="rmp-btn w-8 h-8 rounded-full bg-white border border-slate-200 font-bold hover:bg-slate-100 shadow-sm">−</button>
+        <span id="qty" class="font-bold w-4 text-center inline-block">1</span>
+        <button onclick="changeQty(1)" aria-label="Increase" class="rmp-btn w-8 h-8 rounded-full bg-white border border-slate-200 font-bold hover:bg-slate-100 shadow-sm">+</button>
+      </div>
+      <span class="font-extrabold text-orange-700 inline-block text-base" id="modal-total"></span>
+    </div>
+    <div class="grid grid-cols-2 gap-3">
+      <button onclick="selectPaymentMode('upi')" id="btn-upi" class="rmp-btn p-3 rounded-2xl border-2 font-semibold text-xs">📱 UPI QR</button>
+      <button onclick="selectPaymentMode('cash')" id="btn-cash" class="rmp-btn p-3 rounded-2xl border-2 font-semibold text-xs">💵 Cash on pickup</button>
+    </div>
+    <div id="upi-container" class="space-y-2">
+      <div class="flex justify-center bg-slate-50 p-4 rounded-2xl border border-slate-100"><div id="qrcode-container"></div></div>
+      <p class="text-[11px] text-center text-slate-500">Scan with GPay, PhonePe or Paytm.</p>
+    </div>
+    <div id="cash-container" class="hidden p-4 bg-slate-50 rounded-2xl border border-slate-100 text-center text-xs text-slate-700">
+      <p class="font-semibold">Pay exact cash at the Express Counter.</p>
+      <p class="text-slate-500 mt-1">Your order token is generated instantly.</p>
+    </div>
+    <button onclick="confirmOrder()" class="rmp-btn w-full bg-orange-600 text-white py-3 rounded-xl font-semibold text-sm hover:bg-orange-700 shadow-md">Confirm order</button>
+  </div>
+</div>
+
+<!-- Receipt photo modal -->
+<div id="photo-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm hidden items-center justify-center z-50 p-4 transition-all duration-300" onclick="if(event.target===this)closePhoto()" role="dialog" aria-modal="true" aria-label="Receipt photo">
+  <div class="bg-white max-w-md w-full p-4 rounded-3xl space-y-3 shadow-2xl rmp-slide-up">
+    <img id="photo-big" alt="Receipt" class="w-full max-h-[65vh] object-contain rounded-2xl bg-slate-100">
+    <div class="grid grid-cols-3 gap-2">
+      <button onclick="replaceReceipt()" class="rmp-btn bg-orange-600 text-white py-2 rounded-xl text-xs font-semibold hover:bg-orange-700">Replace</button>
+      <button onclick="removeReceipt()" class="rmp-btn bg-rose-600 text-white py-2 rounded-xl text-xs font-semibold hover:bg-rose-700">Remove</button>
+      <button onclick="closePhoto()" class="rmp-btn bg-slate-900 text-white py-2 rounded-xl text-xs font-semibold hover:bg-slate-800">Close</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-box" aria-live="polite"></div>
+
+<script>
+/* ---------- Helpers ---------- */
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const inr = n => '₹' + Number(n).toLocaleString('en-IN');
+const SESSION = (() => { try { return localStorage.getItem('cn_session'); } catch { return null; } })();
+const PFX = SESSION ? 'cnu_' + SESSION + '_' : 'cn_guest_';
+const load = (k, d) => { try { const v = localStorage.getItem(PFX + k); return v ? JSON.parse(v) : d; } catch { return d; } };
+const save = (k, v) => { try { localStorage.setItem(PFX + k, JSON.stringify(v)); } catch { toast('Storage is full. Remove a photo and try again.'); } };
+const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function play(el, cls) { if (!el) return; el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); }
+
+function toast(msg) {
+  const t = document.createElement('div'); t.className = 'rmp-toast'; t.textContent = msg;
+  $('toast-box').appendChild(t);
+  setTimeout(() => t.classList.add('rmp-out'), 2600);
+  setTimeout(() => t.remove(), 3000);
+}
+function makeQR(el, text, size) { el.innerHTML = ''; new QRCode(el, { text, width: size, height: size }); }
+
+/* ---------- Dark Mode Fix ---------- */
+let isDark = load('dark_mode', false);
+function applyDark() {
+  document.body.classList.toggle('dark', isDark);
+  $('dark-btn').textContent = isDark ? '☀️' : '🌙';
+}
+function toggleDark() {
+  isDark = !isDark;
+  save('dark_mode', isDark);
+  applyDark();
+  toast(isDark ? '🌙 Dark mode enabled' : '☀️ Light mode enabled');
+}
+
+/* ---------- Photo picker ---------- */
+function pickImage(maxSize, done) {
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = 'image/*';
+  inp.onchange = () => {
+    const f = inp.files[0]; if (!f) return;
+    const fr = new FileReader();
+    fr.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const s = Math.min(1, maxSize / Math.max(img.width, img.height));
+        const c = document.createElement('canvas');
+        c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        done(c.toDataURL('image/jpeg', 0.8));
+      };
+      img.onerror = () => toast('That file is not a valid image');
+      img.src = fr.result;
+    };
+    fr.readAsDataURL(f);
+  };
+  inp.click();
+}
+
+/* ---------- Confetti Particle FX ---------- */
+function confetti() {
+  if (reduced) return;
+  const colors = ['#ea580c', '#f59e0b', '#10b981', '#3b82f6', '#ec4899'];
+  for (let i = 0; i < 45; i++) {
+    const s = document.createElement('span'); s.className = 'rmp-confetti';
+    s.style.cssText = `left:50%;top:45%;background:${colors[i % 5]};--x:${(Math.random() - .5) * 600}px;--y:${-150 - Math.random() * 250}px;--r:${Math.random() * 720}deg;animation-delay:${Math.random() * 80}ms`;
+    document.body.appendChild(s); setTimeout(() => s.remove(), 1300);
+  }
+}
+
+/* ---------- Quotes & Avatar ---------- */
+const quotes = [
+  '"The secret of getting ahead is getting started." — Mark Twain',
+  '"Education is the most powerful weapon which you can use to change the world." — Nelson Mandela',
+  '"Innovation distinguishes between a leader and a follower." — Steve Jobs',
+  '"Failure is simply the opportunity to begin again, this time more intelligently." — Henry Ford'
+];
+$('header-quote').textContent = quotes[Math.floor(Date.now() / 864e5) % quotes.length];
+
+let avatar = load('avatar', null);
+function renderAvatar() {
+  $('avatar-btn').innerHTML = avatar ? `<img src="${avatar}" alt="Your profile photo" class="w-full h-full object-cover">` : '👤';
+  $('avatar-del').classList.toggle('hidden', !avatar);
+}
+function changeAvatar() { pickImage(256, d => { avatar = d; save('avatar', avatar); renderAvatar(); renderHome(); toast('📷 Profile photo updated'); }); }
+function removeAvatar() { avatar = null; save('avatar', null); renderAvatar(); renderHome(); toast('Profile photo removed'); }
+
+/* ---------- Navigation Tabs ---------- */
+const tabs = [
+  ['home','🚀 Home'],
+  ['canteen','🍔 Break bite'], 
+  ['bus','🚌 Bus radar'], 
+  ['hostel','🏠 Hostel Portal'],
+  ['academic','📅 Timetable & Rooms'], 
+  ['study','📚 Campus voice'], 
+  ['finance','💰 PayTrack Ledger'], 
+  ['tools','🎓 Student Tools'], 
+  ['submit','💡 Prob box']
+];
+
+$('tab-bar').innerHTML = tabs.map(([id, label]) =>
+  `<button role="tab" id="tab-${id}" onclick="switchTab('${id}')" class="rmp-btn tab-btn px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition-all duration-200">${label}</button>`).join('');
+
+function switchTab(tabId) {
+  if (!tabs.some(([id]) => id === tabId)) tabId = 'home';
+  tabs.forEach(([id]) => {
+    const on = id === tabId;
+    $('section-' + id).classList.toggle('hidden', !on);
+    if (on) play($('section-' + id), 'rmp-enter');
+    const b = $('tab-' + id);
+    b.setAttribute('aria-selected', on);
+    b.className = 'rmp-btn tab-btn px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition-all duration-200 ' +
+      (on ? 'bg-orange-600 text-white shadow-md' : 'text-slate-600 hover:bg-orange-50');
+  });
+  if (tabId === 'home') renderHome();
+  save('tab', tabId);
+}
+
+/* ---------- 24 Canteen Menu Items with High Quality Photos ---------- */
+const canteenItems = [
+  { id: 1, name: "Chicken Biryani", price: 120, stall: "Main Canteen", img: "https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=500&auto=format&fit=crop&q=80" },
+  { id: 2, name: "Veg Meals / Thali", price: 80, stall: "Main Canteen", img: "https://images.unsplash.com/photo-1610192244261-3f33de3f55e4?w=500&auto=format&fit=crop&q=80" },
+  { id: 3, name: "Paneer Cheese Roll", price: 70, stall: "Java Green", img: "https://images.unsplash.com/photo-1626777552726-4a6b54c97e46?w=500&auto=format&fit=crop&q=80" },
+  { id: 4, name: "Cold Coffee", price: 50, stall: "Juice Stall", img: "https://images.unsplash.com/photo-1517701604599-bb29b565090c?w=500&auto=format&fit=crop&q=80" },
+  { id: 5, name: "Egg Puff & Samosa", price: 30, stall: "Bakery", img: "https://images.unsplash.com/photo-1601050690597-df0568f70950?w=500&auto=format&fit=crop&q=80" },
+  { id: 6, name: "Fresh Fruit Bowl", price: 60, stall: "Juice Stall", img: "https://images.unsplash.com/photo-1519996529931-28324d5a630e?w=500&auto=format&fit=crop&q=80" },
+  { id: 7, name: "Paneer Butter Masala & Naan", price: 110, stall: "Main Canteen", img: "https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=500&auto=format&fit=crop&q=80" },
+  { id: 8, name: "South Indian Special Dosa", price: 55, stall: "Main Canteen", img: "https://images.unsplash.com/photo-1668236543090-82eba5ee5976?w=500&auto=format&fit=crop&q=80" },
+  { id: 9, name: "Chocolate Brownie Sundae", price: 90, stall: "Bakery", img: "https://images.unsplash.com/photo-1564355808539-22fda35bed7e?w=500&auto=format&fit=crop&q=80" },
+  { id: 10, name: "Samosa Chat", price: 40, stall: "Bakery", img: "https://images.unsplash.com/photo-1601050690597-df0568f70950?w=500&auto=format&fit=crop&q=80" },
+  { id: 11, name: "Mango Lassi", price: 45, stall: "Juice Stall", img: "https://images.unsplash.com/photo-1546173159-315724a31696?w=500&auto=format&fit=crop&q=80" },
+  { id: 12, name: "Grilled Veg Sandwich", price: 65, stall: "Java Green", img: "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=500&auto=format&fit=crop&q=80" },
+  { id: 13, name: "Mutton Biryani", price: 180, stall: "Main Canteen", img: "https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=500&auto=format&fit=crop&q=80" },
+  { id: 14, name: "Gobi Manchurian", price: 85, stall: "Main Canteen", img: "https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?w=500&auto=format&fit=crop&q=80" },
+  { id: 15, name: "Schezwan Chicken Fried Rice", price: 130, stall: "Main Canteen", img: "https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=500&auto=format&fit=crop&q=80" },
+  { id: 16, name: "Veg Cheese Burger", price: 75, stall: "Java Green", img: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500&auto=format&fit=crop&q=80" },
+  { id: 17, name: "Crispy French Fries", price: 60, stall: "Java Green", img: "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=500&auto=format&fit=crop&q=80" },
+  { id: 18, name: "Oreo Thickshake", price: 70, stall: "Juice Stall", img: "https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=500&auto=format&fit=crop&q=80" },
+  { id: 19, name: "Fresh Tender Coconut Water", price: 40, stall: "Juice Stall", img: "https://images.unsplash.com/photo-1525385133512-2f3bdd039054?w=500&auto=format&fit=crop&q=80" },
+  { id: 20, name: "Chicken Roll", price: 80, stall: "Java Green", img: "https://images.unsplash.com/photo-1626777552726-4a6b54c97e46?w=500&auto=format&fit=crop&q=80" },
+  { id: 21, name: "Choco Lava Cake", price: 65, stall: "Bakery", img: "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=500&auto=format&fit=crop&q=80" },
+  { id: 22, name: "Butter Croissant", price: 45, stall: "Bakery", img: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=500&auto=format&fit=crop&q=80" },
+  { id: 23, name: "Pav Bhaji", price: 70, stall: "Main Canteen", img: "https://images.unsplash.com/photo-1606491956689-2ea866880c84?w=500&auto=format&fit=crop&q=80" },
+  { id: 24, name: "Iced Green Tea", price: 35, stall: "Juice Stall", img: "https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=500&auto=format&fit=crop&q=80" }
+];
+
+let foodPhotos = load('foodphotos', {});
+let stallFilter = 'All';
+
+function foodPhoto(id) {
+  pickImage(640, d => { 
+    foodPhotos[id] = d; 
+    save('foodphotos', foodPhotos); 
+    renderCanteen(false); 
+    toast('📷 Custom food photo updated'); 
+  });
+}
+
+function removeFoodPhoto(id) { 
+  delete foodPhotos[id]; 
+  save('foodphotos', foodPhotos); 
+  renderCanteen(false); 
+  toast('Restored default photo'); 
+}
+
+function renderCanteen(anim = true) {
+  const q = $('food-search').value.trim().toLowerCase();
+  const stalls = ['All', ...new Set(canteenItems.map(i => i.stall))];
+  
+  $('stall-chips').innerHTML = stalls.map(s =>
+    `<button onclick="setStall('${s}')" class="rmp-btn px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
+      stallFilter === s ? 'bg-orange-600 text-white shadow-sm' : 'bg-white text-slate-600 hover:bg-orange-50 border border-slate-200'
+    }">${s}</button>`
+  ).join('');
+
+  const filtered = canteenItems.filter(i => {
+    const matchStall = stallFilter === 'All' || i.stall === stallFilter;
+    const matchQuery = !q || i.name.toLowerCase().includes(q) || i.stall.toLowerCase().includes(q);
+    return matchStall && matchQuery;
+  });
+
+  const grid = $('canteen-items-grid');
+  grid.innerHTML = filtered.map((item, idx) => {
+    const activeImg = foodPhotos[item.id] || item.img;
+    const isCustom = !!foodPhotos[item.id];
+    return `
+      <div class="rmp-card bg-white rounded-3xl p-5 border border-orange-100/80 shadow-sm flex flex-col justify-between space-y-4 ${anim ? 'rmp-enter' : ''}" style="animation-delay: ${idx * 30}ms">
+        <div class="space-y-3">
+          <div class="relative h-40 bg-orange-50 rounded-2xl overflow-hidden flex items-center justify-center group">
+            <img src="${activeImg}" alt="${item.name}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
+            <div class="absolute bottom-2 right-2 flex gap-1 opacity-90 group-hover:opacity-100 transition-opacity">
+              <button onclick="foodPhoto(${item.id})" class="rmp-btn bg-white/95 backdrop-blur-sm px-2.5 py-1 rounded-xl text-xs shadow-md hover:bg-white flex items-center gap-1 font-semibold text-slate-800" title="Upload custom photo">📷 Edit</button>
+              ${isCustom ? `<button onclick="removeFoodPhoto(${item.id})" class="rmp-btn bg-slate-900/80 text-white p-1.5 rounded-xl text-xs shadow hover:bg-slate-900" title="Reset photo">✕</button>` : ''}
+            </div>
+          </div>
+          <div>
+            <div class="flex items-center justify-between">
+              <h3 class="font-bold text-slate-900 text-base tracking-tight">${item.name}</h3>
+              <span class="font-extrabold text-orange-600 text-base">${inr(item.price)}</span>
+            </div>
+            <p class="text-xs text-slate-500 font-medium mt-0.5">${item.stall}</p>
+          </div>
+        </div>
+        <button onclick="openModal(${item.id})" class="rmp-btn w-full bg-slate-900 text-white py-2.5 rounded-xl text-xs font-semibold hover:bg-slate-800 shadow-md">Order Express</button>
+      </div>
+    `;
+  }).join('');
+}
+
+function setStall(s) { stallFilter = s; renderCanteen(false); }
+$('food-search').addEventListener('input', () => renderCanteen(false));
+
+/* ---------- Payment Modal & Cart ---------- */
+let activeItem = null;
+let activeQty = 1;
+let activePayMode = 'upi';
+
+function openModal(id) {
+  activeItem = canteenItems.find(i => i.id === id);
+  if (!activeItem) return;
+  activeQty = 1;
+  activePayMode = 'upi';
+  $('modal-item-title').textContent = activeItem.name + ' — Checkout';
+  updateModalTotal();
+  selectPaymentMode('upi');
+  $('payment-modal').classList.remove('hidden');$('payment-modal').classList.add('flex');
+}
+
+function closeModal() {
+  $('payment-modal').classList.add('hidden');$('payment-modal').classList.remove('flex');
+}
+
+function changeQty(d) {
+  activeQty = Math.max(1, activeQty + d);
+  updateModalTotal();
+}
+
+function updateModalTotal() {
+  $('qty').textContent = activeQty;
+  const tot = activeItem.price * activeQty;
+  $('modal-total').textContent = inr(tot);
+  if (activePayMode === 'upi') {
+    const upiUri = `upi://pay?pa=campusnex@upi&pn=CAMPUS_NEX_Canteen&am=${tot}&cu=INR`;
+    makeQR($('qrcode-container'), upiUri, 140);
+  }
+}
+
+function selectPaymentMode(mode) {
+  activePayMode = mode;
+  const isUpi = mode === 'upi';
+  $('btn-upi').className = `rmp-btn p-3 rounded-2xl border-2 font-semibold text-xs ${isUpi ? 'border-orange-500 bg-orange-50 text-orange-950 shadow-sm' : 'border-slate-200 text-slate-600'}`;
+  $('btn-cash').className = `rmp-btn p-3 rounded-2xl border-2 font-semibold text-xs ${!isUpi ? 'border-orange-500 bg-orange-50 text-orange-950 shadow-sm' : 'border-slate-200 text-slate-600'}`;
+  $('upi-container').classList.toggle('hidden', !isUpi);$('cash-container').classList.toggle('hidden', isUpi);
+  updateModalTotal();
+}
+
+function confirmOrder() {
+  closeModal();
+  confetti();
+  const token = 'CN-' + Math.floor(100 + Math.random() * 900);
+  toast(`🎉 Order placed! Token: ${token}`);
+  addExpenseDirect('Canteen', `${activeItem.name} (x${activeQty})`, activeItem.price * activeQty, activePayMode.toUpperCase());
+}
+
+/* ---------- Bus Tracking ---------- */
+const busRoutes = [
+  { id: 'r1', name: 'Route 12 - Tambaram Express', start: 'Tambaram', current: 'Guindy', status: 'On Time', progress: 45, occupancy: 'Medium' },
+  { id: 'r2', name: 'Route 05 - Central Direct', start: 'Central Station', current: 'Koyambedu', status: 'Delayed 5m', progress: 70, occupancy: 'High' },
+  { id: 'r3', name: 'Route 21 - Velachery Shuttle', start: 'Velachery', current: 'Madipakkam', status: 'On Time', progress: 20, occupancy: 'Low' }
+];
+let activeBus = busRoutes[0];
+
+function renderBus() {
+  $('bus-routes-list').innerHTML = busRoutes.map(b => `
+    <button onclick="selectBus('${b.id}')" class="rmp-btn w-full text-left p-3.5 rounded-2xl border transition-all ${
+      activeBus.id === b.id ? 'border-orange-500 bg-orange-50/60 shadow-sm' : 'border-slate-100 hover:bg-slate-50'
+    }">
+      <div class="flex justify-between items-center">
+        <p class="font-bold text-xs text-slate-900">${b.name}</p>
+        <span class="text-[10px] px-2 py-0.5 rounded-full font-bold ${b.status.includes('Delayed') ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}">${b.status}</span>
+      </div>
+      <p class="text-[11px] text-slate-500 mt-1">From: ${b.start}</p>
+    </button>
+  `).join('');
+
+  $('active-bus-title').textContent = activeBus.name;
+  $('active-bus-status').textContent = activeBus.status;
+  $('bus-start').textContent = activeBus.start;
+  $('bus-current-stop').textContent = activeBus.current;
+  $('bus-progress').style.width = activeBus.progress + '%';$('bus-icon').style.left = activeBus.progress + '%';
+  
+  const occ = $('bus-occupancy-badge');
+  occ.textContent = activeBus.occupancy + ' Occupancy';
+  occ.className = `text-white font-bold text-xs px-2.5 py-1 rounded-lg inline-block mt-0.5 ${
+    activeBus.occupancy === 'High' ? 'bg-rose-500' : activeBus.occupancy === 'Medium' ? 'bg-amber-500' : 'bg-emerald-500'
+  }`;
+}
+
+function selectBus(id) { activeBus = busRoutes.find(b => b.id === id); renderBus(); }
+function simulateDriverMove() {
+  activeBus.progress = (activeBus.progress + 15) % 100;
+  renderBus();
+  toast('📍 Driver GPS location updated');
+}
+function updateSeatRadar(color) {
+  const occMap = { green: 'Low', yellow: 'Medium', red: 'High' };
+  activeBus.occupancy = occMap[color];
+  renderBus();
+  toast('Seat occupancy reported!');
+}
+
+/* ---------- Hostel & Mess Mind ---------- */
+let isHostelLoggedIn = load('hostel_login', false);
+let messStatus = load('mess_status', { breakfast: true, lunch: true, snacks: true, dinner: true });
+let mealsSavedCount = load('meals_saved', 0);
+
+function renderMessMind() {
+  const meals = [
+    { id: 'breakfast', name: 'Breakfast 🍳', time: '07:30 - 09:00' },
+    { id: 'lunch', name: 'Lunch 🍲', time: '12:15 - 01:45' },
+    { id: 'snacks', name: 'Snacks ☕', time: '04:30 - 05:30' },
+    { id: 'dinner', name: 'Dinner 🍛', time: '07:30 - 09:00' }
+  ];
+
+  $('mess-meal-grid').innerHTML = meals.map(m => {
+    const isAttending = messStatus[m.id];
+    return `
+      <div class="bg-white/10 backdrop-blur-sm p-3.5 rounded-2xl border border-white/10 flex flex-col justify-between space-y-2">
+        <div>
+          <p class="font-bold text-xs text-white">${m.name}</p>
+          <p class="text-[10px] text-emerald-100">${m.time}</p>
+        </div>
+        <button onclick="toggleMessMeal('${m.id}')" class="rmp-btn w-full py-1.5 rounded-xl text-xs font-semibold transition-all ${
+          isAttending ? 'bg-white text-emerald-800 shadow-sm' : 'bg-rose-500/90 text-white'
+        }">
+          ${isAttending ? '✓ Eating' : '✕ Skipping'}
+        </button>
+      </div>
+    `;
+  }).join('');
+
+  $('mess-savings').textContent = `🌱 Meals Saved: ${mealsSavedCount}`;
+}
+
+function toggleMessMeal(id) {
+  messStatus[id] = !messStatus[id];
+  if (!messStatus[id]) mealsSavedCount++;
+  else mealsSavedCount = Math.max(0, mealsSavedCount - 1);
+
+  save('mess_status', messStatus);
+  save('meals_saved', mealsSavedCount);
+  renderMessMind();
+  toast(messStatus[id] ? `Confirmed attendance for ${id}` : `Cancelled meal for ${id}. Waste saved!`);
+}
+
+function checkHostelAuth() {
+  $('hostel-login-box').classList.toggle('hidden', isHostelLoggedIn);$('hostel-dashboard').classList.toggle('hidden', !isHostelLoggedIn);
+  if (isHostelLoggedIn) renderMessMind();
+}
+
+function loginHostel() {
+  const id = $('hostel-id').value, pass = $('hostel-pass').value;
+  if (id === 'HST101' && pass === 'hostel123') {
+    isHostelLoggedIn = true; save('hostel_login', true);
+    checkHostelAuth(); toast('Logged into Hostel Portal');
+  } else toast('Invalid Credentials');
+}
+
+function logoutHostel() {
+  isHostelLoggedIn = false; save('hostel_login', false);
+  checkHostelAuth(); toast('Logged out');
+}
+
+function requestOutpass() {
+  const reason = $('outpass-reason').value.trim();
+  if (!reason) { toast('Please enter a reason'); return; }
+  $('outpass-status').textContent = 'Approved (Valid for 24h)';
+  makeQR($('qrcode-outpass'), 'CAMPUS_NEX_OUTPASS_HST101_' + Date.now(), 120);
+  toast('Outpass generated successfully!');
+}
+
+function submitMaintenance() {
+  const val = $('maintenance-issue').value.trim();
+  if (!val) return;
+  const li = document.createElement('li');
+  li.textContent = `• ${val} (Pending)`;
+  $('ticket-list').appendChild(li);$('maintenance-issue').value = '';
+  toast('Ticket submitted');
+}
+
+function bookLaundry() {
+  $('laundry-text').textContent = 'Block A, Machine #2 (Booked by you)';
+  $('laundry-btn').disabled = true;
+  $('laundry-btn').className = 'bg-slate-300 text-slate-500 px-3 py-1.5 rounded-lg font-semibold cursor-not-allowed';
+  toast('Laundry slot reserved');
+}
+
+/* ---------- Dynamic Timetable per Class & Section ---------- */
+const scheduleDatabase = {
+  "CSE Core": {
+    "Section A": [
+      { time: "08:30 AM", sub: "Data Structures & Algos", room: "Tech Block LH-101" },
+      { time: "10:15 AM", sub: "Computer Networks", room: "Tech Block LH-102" },
+      { time: "01:00 PM", sub: "Discrete Mathematics", room: "Main Block 204" },
+      { time: "02:45 PM", sub: "C++ Programming Lab", room: "Lab 3" }
+    ],
+    "Section B": [
+      { time: "08:30 AM", sub: "Discrete Mathematics", room: "Main Block 204" },
+      { time: "10:15 AM", sub: "Data Structures Lab", room: "Lab 2" },
+      { time: "01:00 PM", sub: "Computer Networks", room: "Tech Block LH-101" },
+      { time: "02:45 PM", sub: "Operating Systems", room: "Tech Block LH-103" }
+    ],
+    "Section C": [
+      { time: "08:30 AM", sub: "Operating Systems", room: "LH 201" },
+      { time: "10:15 AM", sub: "Theory of Computation", room: "LH 202" },
+      { time: "01:00 PM", sub: "Web Development Lab", room: "Lab 1" },
+      { time: "02:45 PM", sub: "Database Systems", room: "LH 205" }
+    ],
+    "Section D": [
+      { time: "08:30 AM", sub: "Database Systems", room: "LH 301" },
+      { time: "10:15 AM", sub: "Operating Systems Lab", room: "Lab 4" },
+      { time: "01:00 PM", sub: "Data Structures & Algos", room: "LH 302" },
+      { time: "02:45 PM", sub: "Environmental Science", room: "Main Block 105" }
+    ]
+  },
+  "CSE AIML": {
+    "Section A": [
+      { time: "08:30 AM", sub: "Intro to Artificial Intelligence", room: "AI Block 101" },
+      { time: "10:15 AM", sub: "Python for Data Science Lab", room: "AI Lab 1" },
+      { time: "01:00 PM", sub: "Linear Algebra & Probability", room: "AI Block 102" },
+      { time: "02:45 PM", sub: "Data Structures", room: "LH 108" }
+    ],
+    "Section B": [
+      { time: "08:30 AM", sub: "Linear Algebra & Probability", room: "AI Block 102" },
+      { time: "10:15 AM", sub: "Intro to Artificial Intelligence", room: "AI Block 101" },
+      { time: "01:00 PM", sub: "Machine Learning Concepts", room: "AI Block 201" },
+      { time: "02:45 PM", sub: "AI Ethics & Standards", room: "LH 109" }
+    ],
+    "Section C": [
+      { time: "08:30 AM", sub: "Machine Learning Concepts", room: "AI Block 201" },
+      { time: "10:15 AM", sub: "Neural Networks Overview", room: "AI Block 202" },
+      { time: "01:00 PM", sub: "Deep Learning Lab", room: "AI Lab 2" },
+      { time: "02:45 PM", sub: "Discrete Maths", room: "LH 203" }
+    ],
+    "Section D": [
+      { time: "08:30 AM", sub: "Neural Networks Overview", room: "AI Block 202" },
+      { time: "10:15 AM", sub: "Deep Learning Lab", room: "AI Lab 2" },
+      { time: "01:00 PM", sub: "Intro to Artificial Intelligence", room: "AI Block 101" },
+      { time: "02:45 PM", sub: "Python Advanced Lab", room: "AI Lab 3" }
+    ]
+  },
+  "IT": {
+    "Section A": [
+      { time: "08:30 AM", sub: "Web Engineering", room: "IT Block 301" },
+      { time: "10:15 AM", sub: "Cloud Computing Basics", room: "IT Block 302" },
+      { time: "01:00 PM", sub: "Network Security Lab", room: "IT Lab 1" },
+      { time: "02:45 PM", sub: "Java Programming", room: "IT Block 201" }
+    ],
+    "Section B": [
+      { time: "08:30 AM", sub: "Java Programming", room: "IT Block 201" },
+      { time: "10:15 AM", sub: "Web Engineering Lab", room: "IT Lab 2" },
+      { time: "01:00 PM", sub: "Cyber Security Fundamentals", room: "IT Block 303" },
+      { time: "02:45 PM", sub: "Cloud Computing Basics", room: "IT Block 302" }
+    ],
+    "Section C": [
+      { time: "08:30 AM", sub: "Cyber Security Fundamentals", room: "IT Block 303" },
+      { time: "10:15 AM", sub: "Database Administration", room: "IT Block 104" },
+      { time: "01:00 PM", sub: "Software Testing Lab", room: "IT Lab 3" },
+      { time: "02:45 PM", sub: "Full Stack Development", room: "IT Block 301" }
+    ],
+    "Section D": [
+      { time: "08:30 AM", sub: "Full Stack Development", room: "IT Block 301" },
+      { time: "10:15 AM", sub: "Software Testing Lab", room: "IT Lab 3" },
+      { time: "01:00 PM", sub: "Database Administration", room: "IT Block 104" },
+      { time: "02:45 PM", sub: "IT Project Management", room: "IT Block 102" }
+    ]
+  },
+  "ECE": {
+    "Section A": [
+      { time: "08:30 AM", sub: "Signals & Systems", room: "ECE Block 101" },
+      { time: "10:15 AM", sub: "Digital Electronics Lab", room: "Hardware Lab 1" },
+      { time: "01:00 PM", sub: "Electromagnetic Fields", room: "ECE Block 102" },
+      { time: "02:45 PM", sub: "Microprocessors", room: "ECE Block 201" }
+    ],
+    "Section B": [
+      { time: "08:30 AM", sub: "Microprocessors", room: "ECE Block 201" },
+      { time: "10:15 AM", sub: "VLSI Design Overview", room: "ECE Block 202" },
+      { time: "01:00 PM", sub: "Analog Communication", room: "ECE Block 103" },
+      { time: "02:45 PM", sub: "Signals & Systems Lab", room: "Hardware Lab 2" }
+    ],
+    "Section C": [
+      { time: "08:30 AM", sub: "Analog Communication", room: "ECE Block 103" },
+      { time: "10:15 AM", sub: "Signals & Systems", room: "ECE Block 101" },
+      { time: "01:00 PM", sub: "Embedded Systems Lab", room: "Hardware Lab 3" },
+      { time: "02:45 PM", sub: "Control Systems", room: "ECE Block 301" }
+    ],
+    "Section D": [
+      { time: "08:30 AM", sub: "Control Systems", room: "ECE Block 301" },
+      { time: "10:15 AM", sub: "Embedded Systems Lab", room: "Hardware Lab 3" },
+      { time: "01:00 PM", sub: "Microprocessors", room: "ECE Block 201" },
+      { time: "02:45 PM", sub: "VLSI Design Overview", room: "ECE Block 202" }
+    ]
+  }
+};
+
+function loadTimetable() {
+  const dept = $('select-dept').value;
+  const sec = $('select-section').value;
+  const items = scheduleDatabase[dept]?.[sec] || [];
+
+  $('timetable-result').innerHTML = `
+    <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100 text-xs space-y-3 rmp-enter">
+      <div class="flex justify-between items-center border-b border-slate-200 pb-2">
+        <p class="font-bold text-slate-800 text-sm">${dept} — ${sec}</p>
+        <span class="text-[10px] bg-orange-100 text-orange-800 px-2.5 py-0.5 rounded-full font-semibold">Active Schedule</span>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-slate-600 mt-2">
+        ${items.map(i => `
+          <div class="rmp-card bg-white p-3.5 rounded-xl border border-slate-200 space-y-1 shadow-sm">
+            <span class="text-orange-600 font-bold text-[11px] block">${i.time}</span>
+            <p class="font-bold text-slate-900 text-xs">${i.sub}</p>
+            <p class="text-[10px] text-slate-500">📍 ${i.room}</p>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+/* ---------- PDF Generator ---------- */
+function generatePDF(type) {
+  const code = $('pdf-code-input').value.trim();
+  if (!code) { toast('Please paste text or code first'); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  doc.setFontSize(16);
+  doc.text(type === 'assignment' ? 'CAMPUS NEX Assignment Submission' : 'CAMPUS NEX Exam Summary', 14, 20);
+  doc.setFontSize(10);
+  const lines = doc.splitTextToSize(code, 180);
+  doc.text(lines, 14, 30);
+  doc.save(`${type}_export.pdf`);
+  toast('PDF downloaded');
+}
+
+/* ---------- Chat ---------- */
+let chatData = load('chats', [
+  { text: 'Has anyone submitted the Web Dev assignment?', sec: 'Section C', course: 'CSE Core', year: '1st Year', time: '10:15 AM' }
+]);
+
+function filterChat() {
+  const yr = $('chat-year').value, crs = $('chat-course').value, sec = $('chat-sec').value;
+  $('chat-filter-badge').textContent = `${yr} | ${crs} | ${sec}`;
+  const filtered = chatData.filter(c => c.year === yr && c.course === crs && c.sec === sec);
+  $('chat-messages').innerHTML = filtered.map(m => `
+    <div class="bg-white p-2.5 rounded-xl border border-slate-200 space-y-1 shadow-sm rmp-enter">
+      <p class="text-slate-800">${esc(m.text)}</p>
+      <span class="text-[9px] text-slate-400 block text-right">${m.time}</span>
+    </div>
+  `).join('');
+}
+
+function sendChatMessage() {
+  const inp = $('chat-input'), txt = inp.value.trim();
+  if (!txt) return;
+  chatData.push({
+    text: txt,
+    year: $('chat-year').value,
+    course: $('chat-course').value,
+    sec: $('chat-sec').value,
+    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  });
+  save('chats', chatData);
+  inp.value = '';
+  filterChat();
+}
+
+/* ---------- Finance / Ledger ---------- */
+let ledger = load('ledger', [
+  { cat: 'Tuition', desc: 'Semester 1 Partial Dues', amt: 45000, method: 'Net Banking', date: '2026-09-10', receipt: null }
+]);
+
+function renderLedger() {
+  const tbody = $('ledger-tbody');
+  let tot = 0;
+  tbody.innerHTML = ledger.map((item, idx) => {
+    tot += Number(item.amt);
+    return `
+      <tr class="hover:bg-slate-50/80 transition-colors">
+        <td class="p-3 font-semibold text-slate-900">${esc(item.cat)}</td>
+        <td class="p-3 text-slate-600">${esc(item.desc || '—')}</td>
+        <td class="p-3 text-slate-500">${item.date}</td>
+        <td class="p-3 text-slate-500">${item.method}</td>
+        <td class="p-3 font-bold text-slate-900">${inr(item.amt)}</td>
+        <td class="p-3">${item.receipt ? `<button onclick="viewPhoto(${idx})" class="text-orange-600 font-semibold underline">View</button>` : `<button onclick="attachReceipt(${idx})" class="text-slate-400 hover:text-slate-600">+ Add</button>`}</td>
+        <td class="p-3"><button onclick="deleteExpense(${idx})" class="rmp-btn text-rose-500 font-bold hover:text-rose-700">✕</button></td>
+      </tr>
+    `;
+  }).join('');
+  $('ledger-total').textContent = inr(tot);$('receipt-count').textContent = ledger.filter(i => i.receipt).length;
+}
+
+function toggleExpenseForm() { $('expense-form').classList.toggle('hidden'); }
+
+function addExpense(e) {
+  e.preventDefault();
+  addExpenseDirect($('exp-cat').value, $('exp-desc').value, $('exp-amt').value, $('exp-method').value);$('expense-form').reset();
+  toggleExpenseForm();
+}
+
+function addExpenseDirect(cat, desc, amt, method) {
+  ledger.push({ cat, desc, amt, method, date: new Date().toISOString().split('T')[0], receipt: null });
+  save('ledger', ledger);
+  renderLedger();
+  toast('Expense recorded');
+}
+
+function deleteExpense(idx) { ledger.splice(idx, 1); save('ledger', ledger); renderLedger(); }
+
+let activeReceiptIdx = null;
+function attachReceipt(idx) {
+  pickImage(800, d => { ledger[idx].receipt = d; save('ledger', ledger); renderLedger(); toast('Receipt saved'); });
+}
+
+function viewPhoto(idx) {
+  activeReceiptIdx = idx;
+  $('photo-big').src = ledger[idx].receipt;
+  $('photo-modal').classList.remove('hidden');$('photo-modal').classList.add('flex');
+}
+
+function closePhoto() { $('photo-modal').classList.add('hidden');$('photo-modal').classList.remove('flex'); }
+function replaceReceipt() { if (activeReceiptIdx !== null) attachReceipt(activeReceiptIdx); closePhoto(); }
+function removeReceipt() { if (activeReceiptIdx !== null) { ledger[activeReceiptIdx].receipt = null; save('ledger', ledger); renderLedger(); } closePhoto(); }
+
+/* ---------- Student Tools ---------- */
+function calcAttendance() {
+  const a = Number($('att-a').value), h = Number($('att-h').value), t = Number($('att-t').value);
+  if (!h || a > h) { $('att-out').textContent = 'Enter valid classes attended and held.'; return; }
+  const pct = ((a / h) * 100).toFixed(1);
+  if (pct >= t) {
+    const safeBunk = Math.floor((a - (t / 100) * h) / (t / 100));
+    $('att-out').textContent = `Current: ${pct}%. You are safe! You can bunk ~${safeBunk} more class(es).`;
+  } else {
+    const need = Math.ceil(((t / 100) * h - a) / (1 - t / 100));
+    $('att-out').textContent = `Current: ${pct}%. Warning! You need to attend the next ${need} class(es) straight.`;
+  }
+}
+
+let courses = load('courses', [{ name: 'Data Structures', pts: 9, cr: 4 }, { name: 'OS', pts: 8, cr: 3 }]);
+function renderGPA() {
+  $('course-rows').innerHTML = courses.map((c, i) => `
+    <div class="flex gap-2 items-center rmp-enter">
+      <input type="text" value="${esc(c.name)}" onchange="updateCourse(${i},'name',this.value)" class="flex-1 px-3 py-1.5 rounded-xl border text-xs">
+      <select onchange="updateCourse(${i},'pts',this.value)" class="px-2 py-1.5 rounded-xl border text-xs bg-white">
+        <option value="10" ${c.pts == 10 ? 'selected' : ''}>O</option>
+        <option value="9" ${c.pts == 9 ? 'selected' : ''}>A+</option>
+        <option value="8" ${c.pts == 8 ? 'selected' : ''}>A</option>
+        <option value="7" ${c.pts == 7 ? 'selected' : ''}>B+</option>
+        <option value="6" ${c.pts == 6 ? 'selected' : ''}>B</option>
+        <option value="5" ${c.pts == 5 ? 'selected' : ''}>C</option>
+        <option value="0" ${c.pts == 0 ? 'selected' : ''}>F</option>
+      </select>
+      <input type="number" value="${c.cr}" min="1" onchange="updateCourse(${i},'cr',this.value)" class="w-14 px-2 py-1.5 rounded-xl border text-xs">
+      <button onclick="removeCourse(${i})" class="rmp-btn text-rose-500 font-bold px-1">✕</button>
+    </div>
+  `).join('');
+  
+  let totPts = 0, totCr = 0;
+  courses.forEach(c => { totPts += c.pts * c.cr; totCr += Number(c.cr); });
+  const gpa = totCr ? (totPts / totCr).toFixed(2) : '0.00';
+  $('gpa-out').textContent = `GPA: ${gpa}`;
+}
+
+function addCourse() { courses.push({ name: 'New Subject', pts: 8, cr: 3 }); save('courses', courses); renderGPA(); }
+function updateCourse(i, k, v) { courses[i][k] = k === 'name' ? v : Number(v); save('courses', courses); renderGPA(); }
+function removeCourse(i) { courses.splice(i, 1); save('courses', courses); renderGPA(); }
+
+/* Countdown & Todo */
+let exams = load('exams', []);
+function renderExams() {
+  $('exam-list').innerHTML = exams.map((ex, i) => `
+    <li class="flex justify-between p-2.5 bg-slate-50 rounded-xl border rmp-enter">
+      <span><strong>${esc(ex.name)}</strong> (${ex.date})</span>
+      <button onclick="deleteExam(${i})" class="rmp-btn text-rose-500 font-bold">✕</button>
+    </li>
+  `).join('');
+}
+function addExam() {
+  const n = $('exam-name').value, d = $('exam-date').value;
+  if (!n || !d) return;
+  exams.push({ name: n, date: d }); save('exams', exams); renderExams();
+  $('exam-name').value = '';$('exam-date').value = '';
+}
+function deleteExam(i) { exams.splice(i, 1); save('exams', exams); renderExams(); }
+
+let todos = load('todos', []);
+function renderTodos() {
+  $('todo-list').innerHTML = todos.map((td, i) => `
+    <li class="flex justify-between p-2.5 bg-slate-50 rounded-xl border rmp-enter">
+      <span class="${td.done ? 'line-through text-slate-400' : ''} cursor-pointer" onclick="toggleTodo(${i})">${esc(td.text)}</span>
+      <button onclick="deleteTodo(${i})" class="rmp-btn text-rose-500 font-bold">✕</button>
+    </li>
+  `).join('');
+}
+function addTodo() {
+  const t = $('todo-text').value.trim();
+  if (!t) return;
+  todos.push({ text: t, done: false }); save('todos', todos); renderTodos();
+  $('todo-text').value = '';
+}
+function toggleTodo(i) { todos[i].done = !todos[i].done; save('todos', todos); renderTodos(); }
+function deleteTodo(i) { todos.splice(i, 1); save('todos', todos); renderTodos(); }
+
+/* ---------- Submit Ideas ---------- */
+let ideas = load('ideas', []);
+function renderIdeas() {
+  $('idea-list').innerHTML = ideas.map(id => `
+    <div class="p-3.5 bg-orange-50/60 rounded-2xl border border-orange-100 text-xs space-y-1 rmp-enter">
+      <p class="font-bold text-orange-950">${esc(id.title)} <span class="text-[10px] bg-orange-200 text-orange-900 px-2 py-0.5 rounded-full ml-1 font-semibold">${esc(id.cat)}</span></p>
+      <p class="text-slate-600">${esc(id.desc)}</p>
+    </div>
+  `).join('');
+}
+function submitNewIdea() {
+  const t = $('new-title').value.trim(), c = $('new-category').value, d = $('new-desc').value.trim();
+  if (!t || !d) { toast('Please complete all fields'); return; }
+  ideas.push({ title: t, cat: c, desc: d });
+  save('ideas', ideas);
+  renderIdeas();
+  $('new-title').value = '';$('new-desc').value = '';
+  toast('Campus idea added to Prob box!');
+}
+
+/* ---------- HOME DASHBOARD ---------- */
+let student = load('student', { name: 'Student', roll: '22CS1001', dept: 'CSE Core', year: '1st Year', sec: 'Section C', mode: 'Hostel', email: 'student@campusnex.edu', mentor: 'Dr. Mentor' });
+let subjAtt = load('subj_att', [
+  { name: 'Data Structures', a: 38, h: 42 },
+  { name: 'Operating Systems', a: 30, h: 40 },
+  { name: 'Database Systems', a: 33, h: 38 },
+  { name: 'Computer Networks', a: 25, h: 36 },
+  { name: 'Web Dev Lab', a: 18, h: 20 }
+]);
+
+const attColor = p => p >= 75 ? ['bg-emerald-500', 'text-emerald-700'] : p >= 65 ? ['bg-amber-500', 'text-amber-700'] : ['bg-rose-500', 'text-rose-700'];
+const toMin = t => { const [hm, ap] = t.split(' '); let [h, m] = hm.split(':').map(Number); if (ap === 'PM' && h !== 12) h += 12; if (ap === 'AM' && h === 12) h = 0; return h * 60 + m; };
+
+function toggleProfileEdit() {
+  const box = $('profile-edit');
+  box.classList.toggle('hidden');
+  if (!box.classList.contains('hidden')) {
+    $('pf-name').value = student.name; $('pf-roll').value = student.roll;
+    $('pf-dept').value = student.dept; $('pf-year').value = student.year;
+    $('pf-sec').value = student.sec; $('pf-mode').value = student.mode;
+    $('pf-email').value = student.email; $('pf-mentor').value = student.mentor;
+  }
+}
+
+function saveProfile() {
+  student = {
+    name: $('pf-name').value.trim() || 'Student', roll: $('pf-roll').value.trim(),
+    dept: $('pf-dept').value, year: $('pf-year').value, sec: $('pf-sec').value,
+    mode: $('pf-mode').value, email: $('pf-email').value.trim(), mentor: $('pf-mentor').value.trim()
+  };
+  save('student', student);
+  $('profile-edit').classList.add('hidden');
+  renderHome();
+  toast('✅ Profile updated');
+}
+
+function markAtt(i, present) {
+  subjAtt[i].h++; if (present) subjAtt[i].a++;
+  save('subj_att', subjAtt);
+  renderHome();
+}
+
+function renderHome() {
+  const now = new Date(), hr = now.getHours();
+  $('home-greet').textContent = hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening';
+  $('home-name').textContent = student.name.split(' ')[0];
+  $('home-date').textContent = now.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  $('home-sub').textContent = `${student.dept} • ${student.year} • ${student.sec}`;
+
+  // Attendance totals
+  const A = subjAtt.reduce((s, x) => s + x.a, 0), H = subjAtt.reduce((s, x) => s + x.h, 0);
+  const overall = H ? (A / H) * 100 : 0;
+
+  // GPA
+  let tp = 0, tc = 0; courses.forEach(c => { tp += c.pts * c.cr; tc += Number(c.cr); });
+  const gpa = tc ? (tp / tc).toFixed(2) : '0.00';
+
+  // Exams
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const upcoming = exams.map(e => ({ ...e, days: Math.ceil((new Date(e.date) - today) / 864e5) }))
+    .filter(e => e.days >= 0).sort((a, b) => a.days - b.days);
+  const pending = todos.filter(t => !t.done).length;
+  const spent = ledger.reduce((s, x) => s + Number(x.amt), 0);
+
+  const stat = (icon, label, val, sub, tint) => `
+    <div class="rmp-card bg-white p-5 rounded-3xl border border-orange-100 shadow-sm rmp-enter">
+      <div class="w-10 h-10 rounded-2xl ${tint} flex items-center justify-center text-lg mb-3">${icon}</div>
+      <p class="text-xs text-slate-500 font-semibold">${label}</p>
+      <p class="text-2xl font-extrabold text-slate-900 mt-0.5">${val}</p>
+      <p class="text-[11px] text-slate-500 mt-0.5">${sub}</p>
+    </div>`;
+  $('home-stats').innerHTML =
+    stat('📊', 'Overall attendance', overall.toFixed(1) + '%', overall >= 75 ? 'You are in the safe zone' : 'Below 75% — attend more!', 'bg-emerald-100') +
+    stat('🎓', 'Current GPA', gpa, `${courses.length} subjects tracked`, 'bg-blue-100') +
+    stat('✅', 'Pending tasks', pending, upcoming.length ? `Next exam in ${upcoming[0].days} day(s)` : 'No exams scheduled', 'bg-amber-100') +
+    stat('💰', 'Total spent', inr(spent), `🌱 ${mealsSavedCount} meals saved`, 'bg-orange-100');
+
+  // Profile
+  const initials = student.name.split(' ').filter(Boolean).map(w => w[0]).join('').slice(0, 2).toUpperCase() || 'S';
+  const row = (k, v) => `<div class="flex justify-between text-xs py-2 border-b border-slate-100 last:border-0"><span class="text-slate-500 font-medium">${k}</span><span class="font-semibold text-slate-900 text-right">${esc(v || '—')}</span></div>`;
+  $('home-profile').innerHTML = `
+    <div class="flex items-center gap-3 mb-3">
+      <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 text-white text-xl font-extrabold flex items-center justify-center overflow-hidden shadow-md">${avatar ? `<img src="${avatar}" alt="Profile" class="w-full h-full object-cover">` : esc(initials)}</div>
+      <div><p class="font-bold text-slate-900">${esc(student.name)}</p><p class="text-xs text-orange-600 font-semibold">${esc(student.roll)}</p></div>
+    </div>
+    ${row('Department', student.dept)}${row('Year', student.year)}${row('Section', student.sec)}
+    ${row('Residence', student.mode)}${row('Mentor', student.mentor)}${row('Email', student.email)}`;
+
+  // Attendance bars
+  const [, oTxt] = attColor(overall);
+  const badge = $('home-att-badge');
+  badge.textContent = `Overall ${overall.toFixed(1)}% (${A}/${H})`;
+  badge.className = `text-xs font-bold px-3 py-1 rounded-full border border-slate-200 ${oTxt}`;
+  $('home-attendance').innerHTML = subjAtt.map((s, i) => {
+    const p = s.h ? (s.a / s.h) * 100 : 0, [bar, txt] = attColor(p);
+    return `
+      <div class="space-y-1.5">
+        <div class="flex items-center justify-between gap-2 text-xs">
+          <span class="font-semibold text-slate-800 truncate">${esc(s.name)}</span>
+          <div class="flex items-center gap-2 shrink-0">
+            <span class="font-bold ${txt}">${p.toFixed(0)}% <span class="text-slate-400 font-medium">(${s.a}/${s.h})</span></span>
+            <button onclick="markAtt(${i}, true)" aria-label="Mark present" class="rmp-btn w-6 h-6 rounded-lg bg-emerald-100 text-emerald-700 font-bold hover:bg-emerald-200">✓</button>
+            <button onclick="markAtt(${i}, false)" aria-label="Mark absent" class="rmp-btn w-6 h-6 rounded-lg bg-rose-100 text-rose-700 font-bold hover:bg-rose-200">✕</button>
+          </div>
+        </div>
+        <div class="h-2 bg-slate-100 rounded-full overflow-hidden"><div class="${bar} h-full rounded-full" style="width:${Math.min(100, p)}%"></div></div>
+      </div>`;
+  }).join('');
+
+  // Today's schedule (from your timetable data)
+  const classes = scheduleDatabase[student.dept]?.[student.sec] || [];
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  const nextIdx = classes.findIndex(c => toMin(c.time) + 105 > nowMin);
+  $('home-schedule').innerHTML = classes.length ? classes.map((c, i) => `
+    <div class="p-3 rounded-2xl border ${i === nextIdx ? 'border-orange-400 bg-orange-50/70' : 'border-slate-100 bg-slate-50'} text-xs">
+      <div class="flex justify-between"><span class="font-bold text-orange-600">${c.time}</span>${i === nextIdx ? '<span class="text-[10px] font-bold text-orange-700">NEXT UP</span>' : ''}</div>
+      <p class="font-bold text-slate-900 mt-0.5">${esc(c.sub)}</p>
+      <p class="text-[10px] text-slate-500">📍 ${esc(c.room)}</p>
+    </div>`).join('') : '<p class="text-xs text-slate-500">No classes found for your section.</p>';
+
+  // Exams
+  $('home-exams').innerHTML = upcoming.length ? upcoming.slice(0, 4).map(e => `
+    <div class="flex items-center justify-between p-3 rounded-2xl bg-slate-50 border border-slate-100 text-xs">
+      <div><p class="font-bold text-slate-900">${esc(e.name)}</p><p class="text-[10px] text-slate-500">${e.date}</p></div>
+      <span class="font-extrabold ${e.days <= 3 ? 'text-rose-600' : 'text-orange-600'}">${e.days === 0 ? 'Today' : e.days + 'd'}</span>
+    </div>`).join('') : '<p class="text-xs text-slate-500">No upcoming exams. Add one in Student Tools.</p>';
+
+  // Quick actions
+  const qa = [['🍔', 'Order food', 'canteen'], ['🚌', 'Track bus', 'bus'], ['📅', 'Timetable', 'academic'], ['💰', 'Ledger', 'finance'], ['🎓', 'Tools', 'tools'], ['💡', 'Prob box', 'submit']];
+  $('home-actions').innerHTML = qa.map(([ic, l, t]) => `
+    <button onclick="switchTab('${t}')" class="rmp-btn p-3 rounded-2xl bg-slate-50 border border-slate-100 hover:bg-orange-50 hover:border-orange-200 text-xs font-semibold text-slate-700 flex flex-col items-center gap-1"><span class="text-xl">${ic}</span>${l}</button>`).join('');
+}
+
+/* ---------- AUTH ---------- */
+const getAccounts = () => { try { return JSON.parse(localStorage.getItem('cn_accounts')) || []; } catch { return []; } };
+const setAccounts = a => localStorage.setItem('cn_accounts', JSON.stringify(a));
+const userId = roll => roll.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+
+async function hashPw(pw, salt) {
+  const data = new TextEncoder().encode(salt + ':' + pw);
+  if (window.crypto && crypto.subtle) {
+    const buf = await crypto.subtle.digest('SHA-256', data);
+    return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+  let h = 5381; for (const b of data) h = ((h << 5) + h + b) | 0;
+  return 'f' + (h >>> 0).toString(16);
+}
+
+function authMsg(text, ok) {
+  const m = $('auth-msg');
+  m.textContent = text;
+  m.className = 'text-xs font-semibold p-3 rounded-xl border ' + (ok ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-rose-50 border-rose-200 text-rose-700');
+}
+
+function showAuthTab(which) {
+  const login = which === 'login';
+  $('login-form').classList.toggle('hidden', !login);
+  $('register-form').classList.toggle('hidden', login);
+  $('auth-msg').classList.add('hidden');
+  $('auth-tab-login').className = 'rmp-btn py-2 rounded-xl text-xs font-bold ' + (login ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500');
+  $('auth-tab-register').className = 'rmp-btn py-2 rounded-xl text-xs font-bold ' + (!login ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500');
+}
+
+async function doRegister(e) {
+  e.preventDefault();
+  const name = $('rg-name').value.trim(), roll = $('rg-roll').value.trim(), email = $('rg-email').value.trim().toLowerCase();
+  const pw = $('rg-pw').value, pw2 = $('rg-pw2').value, id = userId(roll);
+  const fail = t => { $('auth-msg').classList.remove('hidden'); authMsg(t, false); };
+  if (!id) return fail('Enter a valid roll number.');
+  if (pw.length < 6) return fail('Password must be at least 6 characters.');
+  if (pw !== pw2) return fail('Passwords do not match.');
+  const accounts = getAccounts();
+  if (accounts.some(a => a.id === id || a.email === email)) return fail('An account with this roll number or email already exists.');
+
+  const salt = Math.random().toString(36).slice(2) + Date.now().toString(36);
+  const hash = await hashPw(pw, salt);
+  const first = accounts.length === 0;
+  accounts.push({ id, name, roll, email, salt, hash });
+  setAccounts(accounts);
+
+  const userPfx = 'cnu_' + id + '_';
+  // First account inherits any data saved before login existed
+  if (first) {
+    ['dark_mode','avatar','tab','foodphotos','hostel_login','mess_status','meals_saved','chats','ledger','courses','exams','todos','ideas','subj_att'].forEach(k => {
+      const old = localStorage.getItem('cn_' + k);
+      if (old !== null && localStorage.getItem(userPfx + k) === null) localStorage.setItem(userPfx + k, old);
+    });
+  }
+  localStorage.setItem(userPfx + 'student', JSON.stringify({
+    name, roll, email, dept: $('rg-dept').value, year: $('rg-year').value, sec: $('rg-sec').value,
+    mode: $('rg-mode').value, mentor: 'Dr. Mentor'
+  }));
+  localStorage.setItem('cn_session', id);
+  location.reload();
+}
+
+async function doLogin(e) {
+  e.preventDefault();
+  const key = $('li-id').value.trim().toLowerCase(), pw = $('li-pw').value;
+  const acc = getAccounts().find(a => a.id === userId(key) || a.email === key);
+  $('auth-msg').classList.remove('hidden');
+  if (!acc || (await hashPw(pw, acc.salt)) !== acc.hash) { authMsg('Wrong roll number/email or password.', false); return; }
+  localStorage.setItem('cn_session', acc.id);
+  location.reload();
+}
+
+function logout() {
+  localStorage.removeItem('cn_session');
+  location.reload();
+}
+
+/* ---------- Init ---------- */
+window.addEventListener('DOMContentLoaded', () => {
+  if (!SESSION || !getAccounts().some(a => a.id === SESSION)) {
+    localStorage.removeItem('cn_session');
+    $('auth-screen').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    showAuthTab(getAccounts().length ? 'login' : 'register');
+    if (SESSION) location.reload();
+    return;
+  }
+  applyDark();
+  renderAvatar();
+  renderCanteen(false);
+  renderBus();
+  checkHostelAuth();
+  loadTimetable();
+  filterChat();
+  renderLedger();
+  renderGPA();
+  renderExams();
+  renderTodos();
+  renderIdeas();
+  switchTab(load('tab', 'home'));
+  renderHome();
+});
+</script>
+</body>
+</html>
