@@ -1,0 +1,2223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CAMPUS NEX - Ultimate Student Companion</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  * { transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease; }
+  .rmp-enter { animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+  @keyframes fadeInUp { from { opacity: 0; transform: translateY(12px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+  .rmp-float { display: inline-block; animation: float 3s ease-in-out infinite; }
+  @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+  .rmp-pulse-glow { animation: pulseGlow 2s infinite; }
+  @keyframes pulseGlow { 0%, 100% { box-shadow: 0 0 0 0 rgba(234, 88, 12, 0.4); } 50% { box-shadow: 0 0 0 10px rgba(234, 88, 12, 0); } }
+  .rmp-slide-up { animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
+  @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .rmp-card { transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+  .rmp-card:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(234, 88, 12, 0.1), 0 8px 10px -6px rgba(234, 88, 12, 0.05); }
+  .rmp-btn { transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  .rmp-btn:active { transform: scale(0.94); }
+  .rmp-confetti { position: fixed; width: 8px; height: 8px; border-radius: 50%; pointer-events: none; z-index: 999; animation: confettiPop 1.2s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
+  @keyframes confettiPop { 0% { transform: translate(0, 0) scale(1) rotate(0deg); opacity: 1; } 100% { transform: translate(var(--x), var(--y)) scale(0) rotate(var(--r)); opacity: 0; } }
+  .rmp-toast { position: fixed; bottom: 20px; right: 20px; background: #0f172a; color: white; padding: 12px 20px; border-radius: 16px; font-size: 13px; font-weight: 600; z-index: 100; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3); animation: toastIn 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
+  .rmp-toast.rmp-out { opacity: 0; transform: translateY(15px) scale(0.95); transition: all 0.3s ease; }
+  @keyframes toastIn { from { opacity: 0; transform: translateY(20px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
+  
+
+  /* ===== UI polish ===== */
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+  body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+  ::selection { background: #fdba74; color: #431407; }
+  :focus-visible { outline: 2px solid #ea580c; outline-offset: 2px; border-radius: 10px; }
+  input:focus-visible, select:focus-visible, textarea:focus-visible { outline-offset: 0; }
+  * { scrollbar-width: thin; scrollbar-color: #fdba74 transparent; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: #fdba74; border-radius: 999px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+
+  /* Tab bar: smooth swiping, no ugly scrollbar, bigger tap targets */
+  nav[aria-label="Main sections"] { scrollbar-width: none; scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch; }
+  nav[aria-label="Main sections"]::-webkit-scrollbar { display: none; }
+  #tab-bar .tab-btn { scroll-snap-align: center; min-height: 40px; }
+  #tab-bar .tab-btn:not(.bg-orange-600):hover { background: #fff7ed; }
+
+  /* Cards: photos zoom gently on hover, long names wrap instead of overflowing */
+  .rmp-card h4, .rmp-card h3 { overflow-wrap: anywhere; }
+  .rmp-card .h-36 { position: relative; background-image: linear-gradient(110deg, #ffedd5 30%, #fff7ed 50%, #ffedd5 70%); background-size: 200% 100%; animation: shimmer 1.6s linear 3; }
+  .rmp-card .h-36 img { transition: transform .5s cubic-bezier(.16,1,.3,1), opacity .3s; }
+  .rmp-card:hover .h-36 img { transform: scale(1.06); }
+  @keyframes shimmer { to { background-position: -200% 0; } }
+  .font-extrabold.text-orange-600 { font-variant-numeric: tabular-nums; }
+  .rmp-card { will-change: transform; }
+
+  /* Toasts: stack neatly bottom-left (the voice buttons live bottom-right); top of the screen on phones */
+  #toast-box { position: fixed; left: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 100; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; max-width: min(360px, calc(100vw - 32px)); pointer-events: none; }
+  #toast-box .rmp-toast { position: relative; right: auto; bottom: auto; max-width: 100%; line-height: 1.35; }
+
+  /* Voice buttons */
+  #va-fab { bottom: calc(16px + env(safe-area-inset-bottom, 0px)); right: calc(16px + env(safe-area-inset-right, 0px)); }
+  #va-fab-mic { box-shadow: 0 10px 25px -5px rgba(234,88,12,.55); }
+  #va-fab-mic:hover { transform: scale(1.06); }
+  #va-fab-status { animation: fadeInUp .25s ease-out; }
+  #va-log { scroll-behavior: smooth; }
+
+  @media (max-width: 640px) {
+    #toast-box { left: 12px; right: 12px; bottom: auto; top: 76px; max-width: none; align-items: stretch; }
+    #va-fab { right: 12px; }
+    #va-fab-hf { font-size: 10px; padding: 8px 10px; }
+    #va-fab-mic { width: 52px; height: 52px; }
+    main { padding-bottom: 96px; }          /* keep the last card clear of the floating buttons */
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+  }
+  /* ===== More animations ===== */
+  @keyframes slideDown { from { transform: translateY(-100%); opacity: 0; } }
+  @keyframes cardIn { from { opacity: 0; transform: translateY(22px) scale(.96); } }
+  @keyframes fadeIn { from { opacity: 0; } }
+  @keyframes modalPop { from { opacity: 0; transform: translateY(18px) scale(.92); } }
+  @keyframes bubbleInR { from { opacity: 0; transform: translateX(16px) scale(.9); } }
+  @keyframes bubbleInL { from { opacity: 0; transform: translateX(-16px) scale(.9); } }
+  @keyframes sosBeat { 0%, 70%, 100% { box-shadow: 0 0 0 0 rgba(225,29,72,0); } 80% { box-shadow: 0 0 0 0 rgba(225,29,72,.5); } 100% { box-shadow: 0 0 0 12px rgba(225,29,72,0); } }
+  @keyframes rippleOut { to { transform: scale(4); opacity: 0; } }
+  @keyframes sweep { from { transform: translateX(-120%) skewX(-20deg); } to { transform: translateX(260%) skewX(-20deg); } }
+
+  /* page load: header glides in */
+  header { animation: slideDown .6s cubic-bezier(.16,1,.3,1) backwards; }
+
+  /* canteen cards cascade in when you open the tab or change stall */
+  #canteen-items-grid.stagger > * { animation: cardIn .5s cubic-bezier(.16,1,.3,1) backwards; animation-delay: 540ms; }
+  #canteen-items-grid.stagger > *:nth-child(1) { animation-delay: 45ms; }
+  #canteen-items-grid.stagger > *:nth-child(2) { animation-delay: 90ms; }
+  #canteen-items-grid.stagger > *:nth-child(3) { animation-delay: 135ms; }
+  #canteen-items-grid.stagger > *:nth-child(4) { animation-delay: 180ms; }
+  #canteen-items-grid.stagger > *:nth-child(5) { animation-delay: 225ms; }
+  #canteen-items-grid.stagger > *:nth-child(6) { animation-delay: 270ms; }
+  #canteen-items-grid.stagger > *:nth-child(7) { animation-delay: 315ms; }
+  #canteen-items-grid.stagger > *:nth-child(8) { animation-delay: 360ms; }
+  #canteen-items-grid.stagger > *:nth-child(9) { animation-delay: 405ms; }
+  #canteen-items-grid.stagger > *:nth-child(10) { animation-delay: 450ms; }
+  #canteen-items-grid.stagger > *:nth-child(11) { animation-delay: 495ms; }
+  #canteen-items-grid.stagger > *:nth-child(12) { animation-delay: 540ms; }
+
+  /* sections fade up as you scroll to them (class added by script, removed afterwards so hover effects keep working) */
+  .rv { opacity: 0; transform: translateY(20px); transition: opacity .6s ease, transform .6s cubic-bezier(.16,1,.3,1); }
+  .rv.rv-in { opacity: 1; transform: none; }
+
+  /* modals: backdrop fades, dialog pops */
+  .fixed.inset-0.z-50:not(.hidden) { animation: fadeIn .2s ease-out; }
+  .fixed.inset-0.z-50:not(.hidden) > div { animation: modalPop .35s cubic-bezier(.34,1.56,.64,1); }
+
+  /* click ripple on buttons */
+  .rmp-ripple { position: absolute; border-radius: 9999px; background: rgba(255,255,255,.45); transform: scale(0); animation: rippleOut .6s linear; pointer-events: none; }
+
+  /* voice chat bubbles pop in from their side */
+  #va-log > div.justify-end { animation: bubbleInR .3s cubic-bezier(.16,1,.3,1); }
+  #va-log > div.justify-start { animation: bubbleInL .3s cubic-bezier(.16,1,.3,1); }
+
+  /* SOS button gives a gentle heartbeat so it is easy to find */
+  button[onclick="openSOSModal()"] { animation: sosBeat 3s ease-out infinite; }
+
+  /* food cards: emoji placeholders bob, "Order Express" gets a light sweep on hover */
+  .rmp-card .h-36 > span { display: inline-block; animation: float 3.2s ease-in-out infinite; }
+  .rmp-card button.bg-slate-900 { position: relative; overflow: hidden; }
+  .rmp-card button.bg-slate-900::after { content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 40%; background: linear-gradient(90deg, transparent, rgba(255,255,255,.28), transparent); transform: translateX(-120%) skewX(-20deg); pointer-events: none; }
+  .rmp-card button.bg-slate-900:hover::after { animation: sweep .8s ease-out; }
+  .rmp-btn:hover { filter: brightness(1.06); }
+  .rmp-btn:hover:active { transform: scale(.94); }
+
+  /* =====================================================================
+     NEW THEME  -  DARK: Jet Black + Cerulean Blue + Neon Rose
+                   LIGHT: Ice Silver + Deep Aubergine + Marigold
+     (layout is untouched - only colours + glow changed)
+     ===================================================================== */
+  body.rmp {
+    color-scheme: light;
+    --bg: #e7ecf4;
+    --surface: #f8fafd;   --surface2: #eef1f8;  --surface3: #e2e7f1;  --surface4: #d3dae8;
+    --glass: rgba(248,250,253,.82);
+    --ink: #2b0b33;       --ink2: #4d2a58;      --muted: #7b5d85;
+    --line: rgba(74,18,89,.15);
+    --primary: #f5a30a;   --primary-hi: #ffc233;
+    --on-primary: #2b0b33;
+    --grad-primary: linear-gradient(135deg,#ffc94d,#f5a30a);
+    --grad-secondary: linear-gradient(135deg,#5c1a73,#3b0a45);
+    --grad-bar: linear-gradient(90deg,#f5a30a,#ffd56b);
+    --soft1: rgba(245,163,10,.16);   --soft2: rgba(74,18,89,.09);
+    --hi: #a85a00;        --hi2: #5c1a73;      --link: #6b1d7c;
+    --ring: rgba(245,163,10,.55);
+    --glow: rgba(245,163,10,.55);    --glow-alt: rgba(92,26,115,.40);
+    --glow-line: rgba(245,163,10,.45);
+    --card-shadow: 0 10px 26px -14px rgba(74,18,89,.35), 0 0 22px -8px rgba(245,163,10,.40);
+    --card-hover: 0 0 0 1px rgba(245,163,10,.65), 0 16px 38px -8px rgba(245,163,10,.55);
+    --btn-glow: 0 6px 20px -4px rgba(245,163,10,.65), 0 0 18px -2px rgba(245,163,10,.45);
+    --btn2-glow: 0 6px 20px -4px rgba(74,18,89,.55), 0 0 16px -2px rgba(245,163,10,.45);
+    --banner-glow: 0 14px 44px -10px rgba(92,26,115,.55), 0 0 30px -8px rgba(245,163,10,.45);
+    --text-glow: 0 0 14px rgba(245,163,10,.55);
+    --page-glow: radial-gradient(900px 520px at 88% -8%, rgba(245,163,10,.20), transparent 62%), radial-gradient(800px 520px at -8% 8%, rgba(92,26,115,.16), transparent 62%);
+  }
+  body.rmp.dark {
+    color-scheme: dark;
+    --bg: #04050a;
+    --surface: #0a0d15;   --surface2: #0f1420;  --surface3: #161d2f;  --surface4: #1f2840;
+    --glass: rgba(6,8,14,.82);
+    --ink: #eaf4ff;       --ink2: #c3d5ec;      --muted: #8a9cb8;
+    --line: rgba(31,162,255,.22);
+    --primary: #ff2e7e;   --primary-hi: #ff5c9a;
+    --on-primary: #ffffff;
+    --grad-primary: linear-gradient(135deg,#f5307a,#d6125f);
+    --grad-secondary: linear-gradient(135deg,#1580d6,#0b5cb5);
+    --grad-bar: linear-gradient(90deg,#ff2e7e,#1fa2ff);
+    --soft1: rgba(255,46,126,.13);   --soft2: rgba(31,162,255,.14);
+    --hi: #ff5c9a;        --hi2: #ff8fb8;      --link: #5cc4ff;
+    --ring: rgba(255,46,126,.55);
+    --glow: rgba(255,46,126,.60);    --glow-alt: rgba(31,162,255,.55);
+    --glow-line: rgba(31,162,255,.40);
+    --card-shadow: 0 0 0 1px rgba(31,162,255,.14), 0 0 26px -8px rgba(31,162,255,.50);
+    --card-hover: 0 0 0 1px rgba(255,46,126,.60), 0 0 34px -4px rgba(255,46,126,.60);
+    --btn-glow: 0 0 22px -2px rgba(255,46,126,.70), 0 0 3px rgba(255,255,255,.25) inset;
+    --btn2-glow: 0 0 22px -2px rgba(31,162,255,.70), 0 0 3px rgba(255,255,255,.25) inset;
+    --banner-glow: 0 0 44px -8px rgba(255,46,126,.45), 0 0 26px -8px rgba(31,162,255,.45);
+    --text-glow: 0 0 14px rgba(31,162,255,.65);
+    --page-glow: radial-gradient(900px 520px at 90% -8%, rgba(255,46,126,.17), transparent 62%), radial-gradient(800px 620px at -8% 18%, rgba(31,162,255,.17), transparent 62%);
+  }
+
+  /* ---- page + base ---- */
+  body.rmp { background: var(--page-glow), var(--bg) !important; background-attachment: fixed !important; color: var(--ink) !important; }
+  body * , body ::before, body ::after { border-color: var(--line); }
+  ::selection { background: var(--primary); color: var(--on-primary); }
+  :focus-visible { outline: 2px solid var(--primary) !important; box-shadow: 0 0 14px -2px var(--glow); }
+  * { scrollbar-color: var(--primary) transparent; }
+  ::-webkit-scrollbar-thumb { background: linear-gradient(var(--primary), var(--glow-alt)); box-shadow: 0 0 8px var(--glow); }
+
+  /* ---- surfaces ---- */
+  body .bg-white { background-color: var(--surface) !important; }
+  body .bg-slate-50, body .hover\:bg-slate-50:hover { background-color: var(--surface2) !important; }
+  body .bg-slate-100 { background-color: var(--surface3) !important; }
+  body .bg-slate-200, body .hover\:bg-slate-100:hover, body .hover\:bg-slate-200:hover { background-color: var(--surface4) !important; }
+  body .bg-orange-50, body .bg-orange-50\/80, body .bg-orange-100, body .hover\:bg-orange-50:hover,
+  body .bg-amber-50, body .bg-amber-100 { background-color: var(--soft1) !important; }
+  body .bg-blue-50, body .bg-blue-50\/80, body .bg-indigo-50 { background-color: var(--soft2) !important; }
+  body header.sticky { background: var(--glass) !important; backdrop-filter: blur(16px) saturate(1.4); -webkit-backdrop-filter: blur(16px) saturate(1.4);
+    border-bottom: 1px solid var(--glow-line); box-shadow: 0 10px 34px -16px var(--glow), 0 1px 0 var(--glow-line) !important; }
+  body nav[aria-label="Main sections"] { background: var(--glass) !important; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-color: var(--line) !important; }
+  body kbd { background: var(--surface3) !important; color: var(--ink2); }
+
+  /* ---- text ---- */
+  body .text-slate-900, body .text-slate-800 { color: var(--ink) !important; }
+  body .text-slate-700, body .text-slate-600 { color: var(--ink2) !important; }
+  body .text-slate-500, body .text-slate-400 { color: var(--muted) !important; }
+  body .text-orange-600 { color: var(--hi) !important; }
+  body .text-orange-700, body .text-orange-800, body .text-amber-800 { color: var(--hi2) !important; }
+  body .text-orange-900, body .text-orange-950, body .text-amber-900, body .text-amber-950 { color: var(--ink) !important; }
+  body .text-blue-600, body .text-blue-700, body .text-indigo-700 { color: var(--link) !important; }
+  body .text-blue-900, body .text-blue-950 { color: var(--ink) !important; }
+  body header h1, body .font-extrabold.text-orange-600, body header .text-orange-600 { text-shadow: var(--text-glow); }
+
+  /* ---- borders / rings / dividers ---- */
+  body .border-orange-100, body .border-orange-200, body .border-slate-100, body .border-slate-200,
+  body .border-amber-200, body .border-blue-200, body .border-emerald-200 { border-color: var(--line) !important; }
+  body .border-orange-500 { border-color: var(--primary) !important; box-shadow: 0 0 14px -2px var(--glow); }
+  body .divide-slate-100 > :not([hidden]) ~ :not([hidden]) { border-color: var(--line) !important; }
+  body .focus\:ring-orange-500\/50:focus, body .hover\:ring-orange-400:hover { --tw-ring-color: var(--ring) !important; }
+
+  /* ---- inputs ---- */
+  body :where(input, select, textarea) { background-color: var(--surface2); color: var(--ink); }
+  body :where(input, select, textarea):focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--soft1), 0 0 18px -3px var(--glow); }
+  body ::placeholder { color: var(--muted); opacity: .85; }
+  body option { background: var(--surface); color: var(--ink); }
+
+  /* ---- glow on shadows (cards, banners, buttons) ---- */
+  body .shadow-2xs, body .shadow-xs, body .shadow-sm { --tw-shadow: var(--card-shadow); --tw-shadow-colored: var(--card-shadow); }
+  body .shadow-md, body .shadow-lg, body .shadow-2xl { --tw-shadow: var(--banner-glow); --tw-shadow-colored: var(--banner-glow); }
+  body .rmp-card:hover { box-shadow: var(--card-hover) !important; }
+  body .rmp-card .h-36 { background-image: linear-gradient(110deg, var(--surface3) 30%, var(--surface2) 50%, var(--surface3) 70%); }
+
+  /* ---- primary buttons (were orange): marigold in light / neon rose in dark ---- */
+  body .bg-orange-500, body .bg-orange-600, body .bg-orange-700, body .hover\:bg-orange-600:hover, body .hover\:bg-orange-700:hover,
+  body .bg-amber-500, body .bg-amber-600, body .bg-amber-700, body .hover\:bg-amber-700:hover {
+    background: var(--grad-primary) !important; color: var(--on-primary) !important; box-shadow: var(--btn-glow); border-color: transparent;
+  }
+  body .bg-orange-500:hover, body .bg-orange-600:hover, body .bg-amber-600:hover { filter: brightness(1.1); box-shadow: var(--btn-glow), 0 0 30px -2px var(--glow); }
+  body #tab-bar .tab-btn.bg-orange-600 { animation: glowBreath 3s ease-in-out infinite; }
+  body #tab-bar .tab-btn:not(.bg-orange-600):hover { background: var(--soft1); color: var(--ink) !important; }
+  body #tab-bar .tab-btn:not(.bg-orange-600) { color: var(--ink2) !important; }
+
+  /* ---- secondary buttons (were slate-900 / blue): aubergine in light / cerulean in dark ---- */
+  body .bg-slate-900, body .hover\:bg-slate-800:hover, body .bg-blue-600, body .hover\:bg-blue-700:hover {
+    background: var(--grad-secondary) !important; color: #fff !important; box-shadow: var(--btn2-glow);
+  }
+  body .bg-slate-900:hover, body .bg-blue-600:hover { filter: brightness(1.14); }
+  body #avatar-del { box-shadow: none; }
+
+  /* soft "chip" buttons keep a quiet glow on hover */
+  body .bg-orange-50.text-orange-700:hover, body .bg-slate-100:hover { box-shadow: 0 0 16px -4px var(--glow); }
+
+  /* ---- hero / banner gradients ---- */
+  body.rmp #weather-widget { background-image: linear-gradient(120deg,#3b0a45,#5c1a73 60%,#7d2a8c) !important; }
+  body.rmp.dark #weather-widget { background-image: linear-gradient(120deg,#04243f,#0b5cad 55%,#1fa2ff) !important; }
+
+  body .from-slate-900.via-slate-800.to-orange-700 { background-image: linear-gradient(135deg,#2b0b33,#4a1259 55%,#b86a00) !important; }
+  body.dark .from-slate-900.via-slate-800.to-orange-700 { background-image: linear-gradient(135deg,#05060a,#1b0b1c 52%,#b3125a) !important; }
+
+  body .from-orange-500.via-amber-500.to-orange-600 { background-image: linear-gradient(120deg,#4a1259,#6b1d7c 55%,#a8590a) !important; }
+  body.dark .from-orange-500.via-amber-500.to-orange-600 { background-image: linear-gradient(120deg,#8f0e49,#d6125f 55%,#ff2e7e) !important; }
+
+  body .from-blue-600.via-indigo-600.to-blue-700 { background-image: linear-gradient(120deg,#3b0a45,#5c1a73 60%,#3b0a45) !important; }
+  body.dark .from-blue-600.via-indigo-600.to-blue-700 { background-image: linear-gradient(120deg,#052a4d,#0a6fd1 60%,#052a4d) !important; }
+
+  body .from-emerald-600.via-teal-600.to-emerald-700 { background-image: linear-gradient(120deg,#2b0b33,#4d1561 55%,#2b0b33) !important; }
+  body.dark .from-emerald-600.via-teal-600.to-emerald-700 { background-image: linear-gradient(120deg,#04304f,#0a7ac9 55%,#04304f) !important; }
+
+  body .from-teal-600.via-cyan-600.to-teal-700 { background-image: linear-gradient(120deg,#4a1259,#7b2a86 60%,#4a1259) !important; }
+  body.dark .from-teal-600.via-cyan-600.to-teal-700 { background-image: linear-gradient(120deg,#3a0a24,#a0124f 60%,#3a0a24) !important; }
+
+  body .from-slate-900.via-indigo-950.to-slate-900 { background-image: linear-gradient(135deg,#2b0b33,#1b0623 55%,#2b0b33) !important; }
+  body.dark .from-slate-900.via-indigo-950.to-slate-900 { background-image: linear-gradient(135deg,#04050a,#06203a 55%,#04050a) !important; }
+
+  body .from-orange-500.to-amber-400 { background-image: var(--grad-bar) !important; box-shadow: 0 0 14px var(--glow); }
+  body .bg-orange-500\/20 { background-color: var(--glow) !important; opacity: .45; }
+  body .bg-teal-800 { background-color: rgba(0,0,0,.35) !important; }
+  body .text-teal-100, body .text-teal-200, body .text-emerald-100, body .text-emerald-200, body .text-blue-100 { color: rgba(255,255,255,.82) !important; }
+
+  /* ---- DARK mode: tone the green / amber / rose status colours so they sit on jet black ---- */
+  body.dark .bg-emerald-50, body.dark .bg-emerald-50\/80, body.dark .bg-emerald-100 { background-color: rgba(16,185,129,.14) !important; }
+  body.dark .text-emerald-600, body.dark .text-emerald-700, body.dark .text-emerald-800, body.dark .text-emerald-900, body.dark .text-emerald-950 { color: #5eead4 !important; }
+  body.dark .bg-rose-50, body.dark .bg-rose-100 { background-color: rgba(255,46,126,.14) !important; }
+  body.dark .text-rose-600, body.dark .text-rose-800, body.dark .text-rose-950, body.dark .text-rose-500 { color: #ff8fb8 !important; }
+  body.dark .bg-rose-600, body.dark .bg-rose-500, body.dark .bg-rose-700 { background: var(--grad-primary) !important; box-shadow: var(--btn-glow); }
+  body.dark .border-rose-200, body.dark .border-rose-500 { border-color: rgba(255,46,126,.45) !important; }
+
+  /* ---- logo, toast, floating voice buttons, command palette ---- */
+  body .logo-box { background: linear-gradient(135deg,#5c1a73,#2b0b33) !important; color: var(--primary-hi) !important; box-shadow: 0 0 20px -2px var(--glow); animation: glowBreath 3.2s ease-in-out infinite; }
+  body.dark .logo-box { background: #04050a !important; color: #ff5c9a !important; border: 1px solid rgba(31,162,255,.55); box-shadow: 0 0 20px -2px rgba(31,162,255,.7), 0 0 10px rgba(255,46,126,.35); }
+  body .rmp-toast { background: var(--surface) !important; color: var(--ink) !important; border: 1px solid var(--glow-line); box-shadow: 0 0 26px -6px var(--glow) !important; }
+  body #va-fab-mic { box-shadow: var(--btn-glow) !important; }
+  body #va-fab-mic.rmp-pulse-glow, body #va-fab-mic.animate-pulse { box-shadow: var(--btn-glow), 0 0 34px var(--glow) !important; }
+  body .fixed.inset-0.z-50 { background-color: rgba(0,0,0,.55); backdrop-filter: blur(4px); }
+
+  @keyframes glowBreath { 0%, 100% { filter: drop-shadow(0 0 3px var(--glow)); } 50% { filter: drop-shadow(0 0 9px var(--glow)); } }
+  @keyframes pulseGlow { 0%, 100% { box-shadow: 0 0 0 0 var(--glow); } 50% { box-shadow: 0 0 0 10px rgba(0,0,0,0); } }
+</style>
+</head>
+<body class="rmp bg-[#FFF9F5] text-slate-800 min-h-screen flex flex-col font-['Plus_Jakarta_Sans']" data-theme="orange">
+
+<header class="bg-white border-b border-orange-100 sticky top-0 z-40 shadow-sm backdrop-blur-md bg-white/90">
+  <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+    <div class="flex items-center space-x-3">
+      <div class="logo-box h-10 w-10 rounded-2xl flex items-center justify-center p-1.5 shadow-md shrink-0 transition-transform duration-300 hover:rotate-6 hover:scale-105">
+        <svg viewBox="0 0 100 100" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+          <ellipse cx="50" cy="55" rx="45" ry="12" fill="none" stroke="currentColor" stroke-width="6" transform="rotate(-15 50 55)"/>
+          <path d="M 65 25 A 35 35 0 1 0 65 75" fill="none" stroke="currentColor" stroke-width="12" stroke-linecap="round"/>
+          <path d="M 50 35 L 50 65 L 75 35 L 75 65" fill="none" stroke="currentColor" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M 32 50 L 32 60 L 42 60 L 42 50 Z M 37 42 L 32 47 L 42 47 Z" fill="currentColor"/>
+        </svg>
+      </div>
+      <div>
+        <h1 class="text-lg font-bold text-slate-900 leading-tight tracking-tight">CAMPUS NEX Hub</h1>
+        <p class="text-xs text-orange-600 font-semibold">Ultimate Student Companion</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2 sm:gap-3">
+      <button onclick="openCmdPalette()" class="hidden md:flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1.5 rounded-xl text-xs font-semibold">
+        <span>🔍 Search / Cmd K</span><kbd class="bg-white px-1.5 py-0.5 rounded border shadow-2xs text-[10px]">⌘K</kbd>
+      </button>
+      <button onclick="openSOSModal()" class="rmp-btn bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow-sm flex items-center gap-1">🚨 SOS</button>
+      <div class="relative shrink-0">
+        <button id="avatar-btn" onclick="changeAvatar()" aria-label="Change profile photo" class="rmp-btn w-9 h-9 rounded-full overflow-hidden bg-orange-100 text-lg flex items-center justify-center shadow-sm hover:ring-2 hover:ring-orange-400">👤</button>
+        <button id="avatar-del" onclick="removeAvatar()" aria-label="Remove profile photo" class="hidden absolute -top-1 -right-1 w-4 h-4 rounded-full bg-slate-900 text-white text-[9px] leading-none hover:bg-rose-600">✕</button>
+      </div>
+      <button id="dark-btn" onclick="toggleDark()" aria-label="Toggle dark mode" class="rmp-btn w-9 h-9 rounded-xl bg-slate-100 text-lg shrink-0 hover:bg-slate-200">🌙</button>
+      <button onclick="logout()" aria-label="Log out" title="Log out" class="rmp-btn h-9 px-3 rounded-xl bg-slate-900 text-white text-xs font-bold shrink-0 hover:bg-rose-600">Log out</button>
+    </div>
+  </div>
+</header>
+
+<nav class="bg-white border-b border-slate-100 overflow-x-auto" aria-label="Main sections">
+  <div class="max-w-7xl mx-auto px-4 flex space-x-1 py-2" role="tablist" id="tab-bar"></div>
+</nav>
+
+<main class="max-w-7xl mx-auto px-4 py-6 flex-1 w-full space-y-6">
+
+  <!-- HOME DASHBOARD -->
+  <section id="section-home" class="space-y-6">
+    <div id="weather-widget" class="bg-gradient-to-r from-teal-600 via-cyan-600 to-blue-600 text-white p-4 rounded-3xl shadow-md flex flex-col sm:flex-row justify-between items-center gap-4">
+      <div class="flex items-center gap-3">
+        <span id="weather-icon" class="text-3xl">⛅</span>
+        <div>
+          <div class="flex items-center gap-2"><h3 id="weather-temp" class="font-extrabold text-base">31°C • Ramapuram Campus</h3><span id="weather-aqi" class="text-[10px] bg-emerald-500/80 px-2 py-0.5 rounded-full font-bold">AQI: 42 (Good)</span></div>
+          <p id="weather-tip" class="text-xs text-teal-100 mt-0.5 font-medium">Pleasant breeze. Great day for walking between blocks!</p>
+        </div>
+      </div>
+      <button onclick="refreshWeather()" class="rmp-btn bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 rounded-xl text-xs font-bold backdrop-blur-md">Refresh Micro-Climate</button>
+    </div>
+
+    <div class="bg-gradient-to-br from-slate-900 via-slate-800 to-orange-700 text-white p-6 sm:p-8 rounded-3xl shadow-lg relative overflow-hidden">
+      <div class="absolute -right-16 -top-16 w-64 h-64 bg-orange-500/20 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="relative flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <p id="home-date" class="text-xs text-orange-200 font-semibold uppercase tracking-wider"></p>
+          <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight mt-1"><span id="home-greet"></span>, <span id="home-name"></span> <span class="rmp-float">👋</span></h2>
+          <p id="home-sub" class="text-slate-300 text-sm mt-1 font-medium"></p>
+        </div>
+        <div class="flex gap-2 flex-wrap">
+          <button onclick="switchTab('canteen')" class="rmp-btn bg-orange-500 text-white px-4 py-2.5 rounded-xl text-xs font-bold hover:bg-orange-600 shadow-md">🍔 Order Food</button>
+          <button onclick="toggleProfileEdit()" class="rmp-btn bg-white/10 border border-white/20 text-white px-4 py-2.5 rounded-xl text-xs font-bold hover:bg-white/20">✏️ Edit Profile</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="profile-edit" class="hidden bg-white p-5 rounded-3xl border border-orange-100 shadow-sm space-y-3">
+      <h3 class="font-bold text-slate-900 text-sm">Edit student details</h3>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+        <input id="pf-name" placeholder="Full name" aria-label="Full name" class="px-3 py-2 rounded-xl border border-slate-200">
+        <input id="pf-roll" placeholder="Roll number" aria-label="Roll number" class="px-3 py-2 rounded-xl border border-slate-200">
+        <select id="pf-dept" aria-label="Department" class="px-3 py-2 rounded-xl border border-slate-200 bg-white"><option>CSE Core</option><option>CSE AIML</option><option>IT</option><option>ECE</option></select>
+        <select id="pf-year" aria-label="Year" class="px-3 py-2 rounded-xl border border-slate-200 bg-white"><option>1st Year</option><option>2nd Year</option><option>3rd Year</option><option>4th Year</option></select>
+        <select id="pf-sec" aria-label="Section" class="px-3 py-2 rounded-xl border border-slate-200 bg-white"><option>Section A</option><option>Section B</option><option>Section C</option><option>Section D</option></select>
+        <select id="pf-mode" aria-label="Residence" class="px-3 py-2 rounded-xl border border-slate-200 bg-white"><option>Hostel</option><option>Day Scholar</option></select>
+        <input id="pf-email" type="email" placeholder="Email" aria-label="Email" class="px-3 py-2 rounded-xl border border-slate-200">
+        <input id="pf-mentor" placeholder="Mentor name" aria-label="Mentor" class="px-3 py-2 rounded-xl border border-slate-200">
+      </div>
+      <button onclick="saveProfile()" class="rmp-btn bg-orange-600 text-white px-5 py-2 rounded-xl text-xs font-semibold hover:bg-orange-700 shadow-sm">Save details</button>
+    </div>
+
+    <div id="home-stats" class="grid grid-cols-2 lg:grid-cols-4 gap-4"></div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div class="bg-white p-6 rounded-3xl border border-orange-100 shadow-sm space-y-4">
+        <h3 class="font-bold text-slate-900">Student profile</h3>
+        <div id="home-profile"></div>
+      </div>
+      <div class="bg-white p-6 rounded-3xl border border-orange-100 shadow-sm space-y-4 lg:col-span-2">
+        <div class="flex items-center justify-between flex-wrap gap-2">
+          <h3 class="font-bold text-slate-900">Attendance tracker</h3>
+          <span id="home-att-badge" class="text-xs font-bold px-3 py-1 rounded-full border"></span>
+        </div>
+        <div id="home-attendance" class="space-y-3"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BREAK BITE (CANTEEN) - EXHAUSTIVE 31 ITEMS WITH FALLBACK IMAGES -->
+  <section id="section-canteen" class="space-y-6 hidden">
+    <div class="bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 text-white p-6 rounded-3xl shadow-lg relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div>
+        <h2 class="text-2xl font-extrabold tracking-tight">Break Bite Canteen & Food Court <span class="rmp-float">🍔</span></h2>
+        <p class="text-orange-100 text-sm mt-1 max-w-xl font-medium">Exhaustive campus dining guide featuring 31 distinct items across Main Canteen, Java Green, and Bakery.</p>
+      </div>
+      <div class="bg-white/25 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-white/20 flex items-center gap-3">
+        <div><p class="text-[10px] uppercase font-bold text-orange-200">Canteen Crowd Meter</p><p id="crowd-status-text" class="text-xs font-extrabold text-white">Moderate (Wait ~8 mins)</p></div>
+        <button onclick="cycleCrowd()" class="rmp-btn bg-white text-orange-700 px-2.5 py-1 rounded-xl text-[10px] font-bold shadow-xs">Update</button>
+      </div>
+    </div>
+    
+    <div class="p-4 rounded-3xl bg-amber-50 border border-amber-200 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <span class="text-2xl">🔥</span>
+        <div><p class="text-xs font-bold text-amber-950">Flash Special: Evening Combo (4 PM - 5 PM)</p><p class="text-[11px] text-amber-800">Cold Coffee + Veg Cheese Sandwich @ ₹99 only at Java Green!</p></div>
+      </div>
+      <button onclick="openModalById(4)" class="rmp-btn bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold shrink-0">Grab Deal</button>
+    </div>
+
+    <div class="flex flex-col sm:flex-row gap-3">
+      <input id="food-search" type="search" placeholder="Search across 31 canteen items..." aria-label="Search food" class="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/50 shadow-sm">
+      <div id="stall-chips" class="flex gap-2 overflow-x-auto pb-1"></div>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4" id="canteen-items-grid"></div>
+  </section>
+
+  <!-- BUS & MOBILITY RADAR -->
+  <section id="section-bus" class="space-y-6 hidden">
+    <div class="bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white p-6 rounded-3xl shadow-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div>
+        <h2 class="text-2xl font-bold tracking-tight">Bus Radar, Carpool & Buggy Tracker <span class="rmp-float">🚌</span></h2>
+        <p class="text-blue-100 text-sm mt-1 font-medium">Live GPS routes, auto/carpool matchers, and internal EV shuttle ETAs.</p>
+      </div>
+      <button onclick="simulateDriverMove()" class="rmp-btn bg-white text-blue-700 px-4 py-2.5 rounded-xl text-xs font-bold hover:bg-blue-50 shadow-md">Simulate GPS Move 📍</button>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="bg-white p-6 rounded-3xl border border-orange-100 shadow-sm space-y-4">
+        <h3 class="font-bold text-slate-900">Select transport mode</h3>
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <button onclick="setMobilityTab('bus')" id="mob-tab-bus" class="rmp-btn p-2.5 rounded-xl font-bold bg-blue-600 text-white">🚌 College Buses</button>
+          <button onclick="setMobilityTab('pool')" id="mob-tab-pool" class="rmp-btn p-2.5 rounded-xl font-bold bg-slate-100 text-slate-700">🚗 Carpool / Autos</button>
+        </div>
+        <div class="space-y-3 pt-2" id="bus-routes-list"></div>
+      </div>
+      <div class="bg-white p-6 rounded-3xl border border-orange-100 shadow-sm space-y-4 md:col-span-2">
+        <div id="panel-bus-tracker" class="space-y-4">
+          <div class="flex items-center justify-between gap-2 flex-wrap">
+            <h3 id="active-bus-title" class="font-bold text-slate-900"></h3>
+            <span id="active-bus-status" class="text-xs font-semibold px-3 py-1 rounded-full border"></span>
+          </div>
+          <div class="bg-slate-900 text-white p-6 rounded-2xl space-y-4 shadow-inner">
+            <div class="flex justify-between text-xs text-slate-400 font-medium"><span id="bus-start"></span><span class="text-orange-400 font-bold animate-pulse flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-orange-500 rmp-pulse-glow"></span>Live bus movement</span><span>CAMPUS NEX</span></div>
+            <div class="relative h-2 bg-slate-700 rounded-full mt-5">
+              <div id="bus-progress" class="h-full bg-gradient-to-r from-orange-500 to-amber-400 rounded-full transition-all duration-700" style="width:0%"></div>
+              <span id="bus-icon" class="absolute -top-4 text-xl transition-all duration-700 transform -translate-x-1/2 drop-shadow-md" style="left:0%">🚌</span>
+            </div>
+            <div class="bg-slate-800/80 p-4 rounded-xl border border-slate-700/60 flex items-center justify-between">
+              <div><p class="text-xs text-slate-400 font-medium">Current location</p><p id="bus-current-stop" class="font-bold text-sm mt-0.5 text-slate-100"></p></div>
+              <div class="text-right"><p class="text-xs text-slate-400 font-medium">Seat occupancy</p><span id="bus-occupancy-badge" class="text-white font-bold text-xs px-2.5 py-1 rounded-lg inline-block mt-0.5 shadow-sm"></span></div>
+            </div>
+          </div>
+          <div class="p-4 bg-orange-50/80 rounded-2xl border border-orange-200 space-y-3">
+            <p class="text-xs font-bold text-orange-950">On this bus right now? Update Seat Radar for friends:</p>
+            <div class="grid grid-cols-3 gap-2">
+              <button onclick="updateSeatRadar('green')" class="rmp-btn bg-emerald-600 text-white py-2 rounded-xl text-xs font-semibold hover:bg-emerald-700 shadow-sm">🟢 Plenty Seats</button>
+              <button onclick="updateSeatRadar('yellow')" class="rmp-btn bg-amber-500 text-white py-2 rounded-xl text-xs font-semibold hover:bg-amber-600 shadow-sm">🟡 Standing Only</button>
+              <button onclick="updateSeatRadar('red')" class="rmp-btn bg-rose-600 text-white py-2 rounded-xl text-xs font-semibold hover:bg-rose-700 shadow-sm">🔴 Full / Packed</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="panel-carpool" class="space-y-4 hidden">
+          <div class="flex items-center justify-between">
+            <h3 class="font-bold text-slate-900">Day Scholar Carpool & Auto Matcher</h3>
+            <button onclick="openAddPoolModal()" class="rmp-btn bg-blue-600 text-white px-3 py-1.5 rounded-xl text-xs font-bold">+ Offer Ride / Auto</button>
+          </div>
+          <div id="carpool-list" class="space-y-2"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOSTEL & MESS PORTAL -->
+  <section id="section-hostel" class="space-y-6 hidden">
+    <div id="hostel-login-box" class="max-w-md mx-auto bg-white p-8 rounded-3xl shadow-sm border border-orange-100 space-y-4">
+      <div class="text-center">
+        <div class="bg-orange-100 w-12 h-12 rounded-2xl flex items-center justify-center mx-auto text-xl mb-2"><span class="rmp-float">🏠</span></div>
+        <h3 class="text-xl font-bold text-slate-900">Hostel resident login</h3>
+        <p class="text-xs text-slate-500">Outpasses, maintenance tickets, mess voting & laundry</p>
+      </div>
+      <div class="space-y-3">
+        <div><label for="hostel-id" class="text-xs font-semibold text-slate-600">Hostel ID</label>
+          <input type="text" id="hostel-id" value="HST101" autocomplete="off" class="w-full mt-1 px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-orange-500/50"></div>
+        <div><label for="hostel-pass" class="text-xs font-semibold text-slate-600">Password</label>
+          <input type="password" id="hostel-pass" value="hostel123" class="w-full mt-1 px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-orange-500/50"></div>
+        <button onclick="loginHostel()" class="rmp-btn w-full bg-orange-600 text-white font-semibold py-3 rounded-xl shadow-md hover:bg-orange-700">Log in</button>
+        <p class="text-[11px] text-center text-slate-400">Demo login: HST101 / hostel123</p>
+      </div>
+    </div>
+
+    <div id="hostel-dashboard" class="space-y-6 hidden">
+      <div class="flex items-center justify-between bg-white p-4 rounded-2xl border border-orange-100 shadow-sm">
+        <div><h3 class="font-bold text-slate-900">Welcome, resident (HST101)</h3>
+          <p class="text-xs text-slate-500">Block A, Room 304 | Status: <span class="text-emerald-600 font-semibold">Checked in</span></p></div>
+        <button onclick="logoutHostel()" class="rmp-btn text-xs bg-slate-100 text-slate-700 px-3 py-1.5 rounded-xl font-semibold hover:bg-slate-200">Log out</button>
+      </div>
+
+      <!-- Dorm Room Energy Battle League -->
+      <div class="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 text-white p-6 rounded-3xl shadow-lg space-y-4">
+        <div class="flex justify-between items-center flex-wrap gap-2">
+          <div>
+            <h3 class="text-xl font-bold flex items-center gap-2">⚡ Dorm Room Energy Battle (Hostel League)</h3>
+            <p class="text-emerald-100 text-xs mt-0.5 font-medium">Inter-block eco competition: saving water and electricity.</p>
+          </div>
+          <span class="bg-white/20 backdrop-blur-md px-3 py-1.5 rounded-xl text-xs font-semibold border border-white/10">🏆 Block A Ranking: #1</span>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3" id="energy-league-grid">
+          <div class="bg-white/10 backdrop-blur-sm p-3.5 rounded-2xl border border-white/10"><p class="text-[10px] text-emerald-200 uppercase font-bold">Block A Eco-Score</p><p class="text-lg font-extrabold text-white mt-1">94.5 / 100</p><p class="text-[10px] text-emerald-100 mt-1">✓ 12% less power used this week</p></div>
+          <div class="bg-white/10 backdrop-blur-sm p-3.5 rounded-2xl border border-white/10"><p class="text-[10px] text-emerald-200 uppercase font-bold">Block B Eco-Score</p><p class="text-lg font-extrabold text-white mt-1">88.2 / 100</p><p class="text-[10px] text-emerald-100 mt-1">Runner up</p></div>
+          <div class="bg-white/10 backdrop-blur-sm p-3.5 rounded-2xl border border-white/10"><p class="text-[10px] text-emerald-200 uppercase font-bold">Block C Eco-Score</p><p class="text-lg font-extrabold text-white mt-1">81.0 / 100</p><p class="text-[10px] text-emerald-100 mt-1">Trailing</p></div>
+        </div>
+      </div>
+
+      <div class="bg-gradient-to-r from-teal-600 via-cyan-600 to-teal-700 text-white p-6 rounded-3xl shadow-lg space-y-4">
+        <div class="flex justify-between items-center flex-wrap gap-2">
+          <div>
+            <h3 class="text-xl font-bold flex items-center gap-2">Mess Mind & Rating 🍲 <span class="text-xs bg-teal-800 px-2.5 py-1 rounded-full text-teal-200 font-normal">Zero Waste & Voting</span></h3>
+            <p class="text-teal-100 text-xs mt-0.5 font-medium">Confirm mess attendance and rate daily catering quality.</p>
+          </div>
+          <span id="mess-savings" class="bg-white/20 backdrop-blur-md px-3 py-1.5 rounded-xl text-xs font-semibold border border-white/10">🌱 Meals Saved: 0</span>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-1" id="mess-meal-grid"></div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-white p-6 rounded-3xl border border-orange-100 shadow-sm space-y-4">
+          <h4 class="font-bold text-slate-900">Digital outpass & gate pass</h4>
+          <input type="text" id="outpass-reason" placeholder="Reason (e.g. Going home for weekend)" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 focus:ring-2 focus:ring-orange-500/50">
+          <button onclick="requestOutpass()" class="rmp-btn w-full bg-orange-600 text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-orange-700 shadow-sm">Generate Outpass QR</button>
+          <div class="p-4 bg-orange-50/80 rounded-2xl border border-orange-200 space-y-2 text-xs">
+            <p class="font-semibold text-orange-950">Status: <span id="outpass-status" class="text-slate-700 font-medium">No active outpass</span></p>
+            <div id="qrcode-outpass" class="flex justify-center py-2"></div>
+          </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-3xl border border-orange-100 shadow-sm space-y-4">
+          <h4 class="font-bold text-slate-900">Maintenance ticket (with Photo)</h4>
+          <div class="space-y-2">
+            <input type="text" id="maintenance-issue" placeholder="Issue (e.g. AC leaking in Rm 304)" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-200">
+            <div class="flex gap-2">
+              <button onclick="pickMaintenancePhoto()" class="rmp-btn bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded-xl text-xs font-semibold">📷 Attach Photo</button>
+              <button onclick="submitMaintenance()" class="rmp-btn flex-1 bg-slate-900 text-white py-2 rounded-xl text-xs font-semibold hover:bg-slate-800">Submit Ticket</button>
+            </div>
+            <span id="maint-photo-status" class="text-[10px] text-emerald-600 font-semibold"></span>
+          </div>
+          <ul id="ticket-list" class="mt-2 text-xs text-slate-600 space-y-1"></ul>
+          <div class="pt-2 border-t border-slate-100">
+            <p class="text-xs font-semibold text-slate-600">Washing machine slot</p>
+            <div class="flex items-center justify-between mt-1 p-3 bg-slate-50 rounded-xl text-xs">
+              <span id="laundry-text" class="font-medium text-slate-700">Block A, Machine #2 (free in 15 mins)</span>
+              <button id="laundry-btn" onclick="bookLaundry()" class="rmp-btn bg-orange-600 text-white px-3 py-1.5 rounded-lg font-semibold hover:bg-orange-700 shadow-sm">Book slot</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ACADEMICS, TIMETABLE & SEAT OCCUPANCY -->
+  <section id="section-academic" class="space-y-6 hidden">
+    <div class="bg-white p-6 rounded-3xl border border-orange-100 shadow-sm space-y-4">
+      <div class="flex items-center justify-between flex-wrap gap-3">
+        <h3 class="text-xl font-bold text-slate-900">Timetable, Venues & Library / Lab Occupancy</h3>
+        <button onclick="syncCalendarICS()" class="rmp-btn bg-slate-900 text-white px-4 py-2 rounded-xl text-xs font-semibold hover:bg-slate-800 shadow-sm">📅 Sync .ics Calendar</button>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <select id="select-dept" aria-label="Department" onchange="loadTimetable()" class="px-3 py-2.5 rounded-xl border border-slate-200 text-sm bg-white focus:ring-2 focus:ring-orange-500/50">
+          <option value="CSE Core">B.Tech CSE Core</option>
+          <option value="CSE AIML">B.Tech CSE AIML</option>
+          <option value="IT">B.Tech IT</option>
+          <option value="ECE">B.Tech ECE</option>
+        </select>
+        <select id="select-section" aria-label="Section" onchange="loadTimetable()" class="px-3 py-2.5 rounded-xl border border-slate-200 text-sm bg-white focus:ring-2 focus:ring-orange-500/50">
+          <option value="Section A">Section A</option>
+          <option value="Section B">Section B</option>
+          <option value="Section C">Section C</option>
+          <option value="Section D">Section D</option>
+        </select>
+        <button onclick="loadTimetable()" class="rmp-btn bg-orange-600 text-white font-semibold py-2.5 rounded-xl text-sm hover:bg-orange-700 shadow-sm">Refresh schedule</button>
+      </div>
+      <div id="timetable-result" class="pt-2"></div>
+    </div>
+
+    <!-- Smart Library & Lab Seat Occupancy -->
+    <div class="bg-white p-6 rounded-3xl border border-orange-100 shadow-sm space-y-4">
+      <div class="flex items-center justify-between">
+        <div><h4 class="font-bold text-slate-900">Live Library & Lab Seat Occupancy</h4><p class="text-xs text-slate-500">Crowd-sourced open study tables and workstation availability</p></div>
+        <button onclick="reportSeatStatus()" class="rmp-btn bg-orange-50 text-orange-700 px-3 py-1.5 rounded-xl text-xs font-semibold border border-orange-200">+ Report Status</button>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4" id="occupancy-grid"></div>
+    </div>
+  </section>
+
+  <!-- PEER COLLAB & STUDY HUB -->
+  <section id="section-collab" class="space-y-6 hidden">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <!-- Smart Study Group Matcher -->
+      <div class="bg-white p-6 rounded-3xl border border-orange-100 shadow-sm space-y-4">
+        <h3 class="text-lg font-bold text-slate-900">🧠 Smart Study Group Matcher</h3>
+        <p class="text-xs text-slate-500">Auto-match with classmates from your department working on exams or hackathons.</p>
+        <div class="flex gap-2">
+          <select id="match-topic" aria-label="Topic" class="flex-1 px-3 py-2 text-xs rounded-xl border bg-white"><option>Data Structures Exam Prep</option><option>Hack Devengers 2.0 Team</option><option>OS Lab Record Review</option><option>Machine Learning Study Circle</option></select>
+          <button onclick="findStudyMatch()" class="rmp-btn bg-orange-600 text-white px-4 py-2 rounded-xl text-xs font-semibold">Match Now</button>
+        </div>
+        <div id="match-results" class="space-y-2 pt-2"></div>
+      </div>
+
+      <!-- Campus Whisper Q&A Board -->
+      <div class="bg-white p-6 rounded-3xl border border-orange-100 shadow-sm flex flex-col h-[420px] space-y-3">
+        <div class="flex items-center justify-between">
+          <h3 class="text-lg font-bold text-slate-900">💬 Campus Whisper Q&A</h3>
+          <span class="text-[10px] bg-indigo-50 text-indigo-700 px-2 py-1 rounded-full font-semibold">Anonymous Board</span>
+        </div>
+        <div id="whisper-list" class="flex-1 overflow-y-auto space-y-2 pr-1 text-xs bg-slate-50 p-3 rounded-2xl border"></div>
+        <div class="flex gap-2">
+          <input type="text" id="whisper-input" placeholder="Ask a doubt anonymously..." aria-label="Doubt" class="flex-1 px-3 py-2 rounded-xl border text-xs">
+          <button onclick="postWhisper()" class="rmp-btn bg-slate-900 text-white px-4 py-2 rounded-xl text-xs font-semibold">Post</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notes & PYQ Cloud Repository -->
+    <div class="bg-white p-6 rounded-3xl border border-orange-100 shadow-sm space-y-4">
+      <div class="flex items-center justify-between flex-wrap gap-2">
+        <div><h3 class="text-lg font-bold text-slate-900">📂 Notes & PYQ Cloud Repository</h3><p class="text-xs text-slate-500">Upload, tag and download question papers, handwritten notes and lab manuals.</p></div>
+        <button onclick="openUploadNotesModal()" class="rmp-btn bg-orange-600 text-white px-4 py-2 rounded-xl text-xs font-semibold">+ Upload Material</button>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4" id="notes-repo-grid"></div>
+    </div>
+  </section>
+
+  <!-- CAMPUS LIFE & RADAR -->
+  <section id="section-life" class="space-y-6 hidden">
+    <!-- AR Campus Navigation & Building Guide -->
+    <div class="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white p-6 rounded-3xl shadow-lg space-y-4">
+      <div class="flex justify-between items-center flex-wrap gap-3">
+        <div><h3 class="text-xl font-bold flex items-center gap-2">📱 AR Campus Navigation & Waypoints</h3><p class="text-xs text-slate-300">Live camera overlay with directional bearings to campus blocks and labs.</p></div>
+        <button onclick="toggleARCamera()" id="ar-toggle-btn" class="rmp-btn bg-orange-600 hover:bg-orange-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold shadow-md">Turn On AR Camera</button>
+      </div>
+      <div id="ar-viewport" class="hidden relative h-64 bg-black rounded-2xl overflow-hidden border border-slate-700 flex items-center justify-center">
+        <video id="ar-video" autoplay playsinline class="absolute inset-0 w-full h-full object-cover opacity-80"></video>
+        <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-slate-950/40 pointer-events-none"></div>
+        <div class="absolute top-3 left-3 bg-slate-900/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-700 text-[11px] text-orange-400 font-mono">🎯 Waypoint: <span id="ar-target-label">Tech Park (Block A)</span> • 120m North</div>
+        <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div class="w-24 h-24 border-2 border-dashed border-orange-500 rounded-full animate-spin"></div>
+          <span class="absolute text-3xl rmp-float">📍</span>
+        </div>
+        <div class="absolute bottom-3 left-3 right-3 flex justify-between items-center text-xs">
+          <select id="ar-dest-select" onchange="updateARDestination(this.value)" class="bg-slate-900/90 text-white border border-slate-700 px-3 py-1.5 rounded-xl text-xs"><option>Tech Park (Block A)</option><option>Central Canteen</option><option>Main Academic Block</option><option>Hostel Gate</option></select>
+          <span class="text-[10px] text-emerald-400 font-bold bg-slate-900/90 px-3 py-1.5 rounded-xl border border-slate-700">GPS Compass Active 🧭</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Virtual Campus Tour / Easter Egg Hunt -->
+    <div class="bg-white p-6 rounded-3xl border border-orange-100 shadow-sm space-y-4">
+      <div class="flex justify-between items-center flex-wrap gap-2">
+        <div><h3 class="text-lg font-bold text-slate-900">🥚 Virtual Campus Tour & Easter Egg Hunt</h3><p class="text-xs text-slate-500">Explore campus locations and unlock hidden badges or canteen discount vouchers!</p></div>
+        <span id="egg-score" class="text-xs font-bold bg-amber-100 text-amber-900 px-3 py-1 rounded-full">Eggs Found: 0 / 4</span>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-4 gap-3" id="egg-grid">
+        <div onclick="findEgg(0)" class="p-4 rounded-2xl bg-amber-50 border border-amber-200 cursor-pointer hover:bg-amber-100 text-center space-y-1"><span class="text-2xl">🏛️</span><p class="font-bold text-xs text-amber-950">Library Archive</p><p class="text-[10px] text-amber-800" id="egg-status-0">Click to search</p></div>
+        <div onclick="findEgg(1)" class="p-4 rounded-2xl bg-amber-50 border border-amber-200 cursor-pointer hover:bg-amber-100 text-center space-y-1"><span class="text-2xl">🌳</span><p class="font-bold text-xs text-amber-950">Quadrangle Oak</p><p class="text-[10px] text-amber-800" id="egg-status-1">Click to search</p></div>
+        <div onclick="findEgg(2)" class="p-4 rounded-2xl bg-amber-50 border border-amber-200 cursor-pointer hover:bg-amber-100 text-center space-y-1"><span class="text-2xl">💻</span><p class="font-bold text-xs text-amber-950">Tech Park Lab 3</p><p class="text-[10px] text-amber-800" id="egg-status-2">Click to search</p></div>
+        <div onclick="findEgg(3)" class="p-4 rounded-2xl bg-amber-50 border border-amber-200 cursor-pointer hover:bg-amber-100 text-center space-y-1"><span class="text-2xl">☕</span><p class="font-bold text-xs text-amber-950">Java Green Cafe</p><p class="text-[10px] text-amber-800" id="egg-status-3">Click to search</p></div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <!-- Lost & Found Radar -->
+      <div class="bg-white p-6 rounded-3xl border border-orange-100 shadow-sm space-y-4">
+        <div class="flex items-center justify-between">
+          <h3 class="text-lg font-bold text-slate-900">🔍 Lost & Found Radar</h3>
+          <button onclick="openLostModal()" class="rmp-btn bg-orange-600 text-white px-3 py-1.5 rounded-xl text-xs font-semibold">+ Report Item</button>
+        </div>
+        <div id="lost-items-list" class="space-y-2"></div>
+      </div>
+
+      <!-- Club & Event Hub / RSVP Tracker -->
+      <div class="bg-white p-6 rounded-3xl border border-orange-100 shadow-sm space-y-4">
+        <h3 class="text-lg font-bold text-slate-900">🎉 Club Events & Symposia Hub</h3>
+        <div id="events-feed" class="space-y-3"></div>
+      </div>
+    </div>
+
+    <!-- Interactive Indoor / Block Map -->
+    <div class="bg-white p-6 rounded-3xl border border-orange-100 shadow-sm space-y-4">
+      <h3 class="text-lg font-bold text-slate-900">🗺️ Interactive Indoor Block & Lab Finder</h3>
+      <p class="text-xs text-slate-500">Quick schematic guide for finding computer labs, seminar halls, and administrative offices.</p>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <button onclick="showMapBlock('Tech Block')" class="rmp-btn p-4 rounded-2xl bg-orange-50 border border-orange-200 text-left hover:bg-orange-100"><p class="font-bold text-sm text-orange-950">Tech Block</p><p class="text-[11px] text-slate-600">LH-101 to 304, CS Labs</p></button>
+        <button onclick="showMapBlock('Main Admin')" class="rmp-btn p-4 rounded-2xl bg-slate-50 border border-slate-200 text-left hover:bg-slate-100"><p class="font-bold text-sm text-slate-900">Main Admin</p><p class="text-[11px] text-slate-600">Fee counter, COE office</p></button>
+        <button onclick="showMapBlock('Library')" class="rmp-btn p-4 rounded-2xl bg-slate-50 border border-slate-200 text-left hover:bg-slate-100"><p class="font-bold text-sm text-slate-900">Central Library</p><p class="text-[11px] text-slate-600">Reading halls, Digital zone</p></button>
+        <button onclick="showMapBlock('Auditorium')" class="rmp-btn p-4 rounded-2xl bg-slate-50 border border-slate-200 text-left hover:bg-slate-100"><p class="font-bold text-sm text-slate-900">Dr. T.P. Gaud Auditorium</p><p class="text-[11px] text-slate-600">Cultural events & fests</p></button>
+      </div>
+      <div id="map-detail-box" class="p-4 bg-slate-50 rounded-2xl border text-xs text-slate-700">Select a block above for exact directions and floor layout.</div>
+    </div>
+  </section>
+
+  <!-- CAREER & GAMIFIED ACADEMICS -->
+  <section id="section-career" class="space-y-6 hidden">
+    <!-- Hackathon Team Finder & Project Showcase -->
+    <div class="bg-white p-6 rounded-3xl border border-orange-100 shadow-sm space-y-4">
+      <div class="flex items-center justify-between flex-wrap gap-2">
+        <div><h3 class="text-xl font-bold text-slate-900">🚀 Hackathon Team Finder & Project Showcase</h3><p class="text-xs text-slate-500">Find teammates by skills (React, Node, AI/ML) or showcase hackathon projects.</p></div>
+        <button onclick="openHackModal()" class="rmp-btn bg-orange-600 text-white px-4 py-2 rounded-xl text-xs font-semibold">+ Post Project / Need Teammates</button>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="hackathon-grid"></div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <!-- Placement & Internship Tracker -->
+      <div class="bg-white p-6 rounded-3xl border border-orange-100 shadow-sm space-y-4">
+        <h3 class="text-lg font-bold text-slate-900">💼 Placement & Internship Tracker</h3>
+        <div id="internship-board" class="space-y-2"></div>
+      </div>
+
+      <!-- Gamified Pomodoro & Daily Streak -->
+      <div class="bg-white p-6 rounded-3xl border border-orange-100 shadow-sm space-y-4 text-center">
+        <h3 class="text-lg font-bold text-slate-900">⚡ Pomodoro Focus & Daily Streak</h3>
+        <div class="py-6 bg-slate-900 text-white rounded-3xl space-y-2 shadow-inner">
+          <p class="text-xs text-orange-400 font-bold uppercase tracking-wider">🔥 Streak: <span id="streak-count">5</span> Days Consistent</p>
+          <h2 id="pomo-timer" class="text-5xl font-extrabold tracking-tight font-mono">25:00</h2>
+          <p id="pomo-label" class="text-xs text-slate-400">Focus Mode</p>
+        </div>
+        <div class="flex justify-center gap-2">
+          <button onclick="startPomodoro()" class="rmp-btn bg-orange-600 text-white px-5 py-2.5 rounded-xl text-xs font-semibold">Start Focus Timer</button>
+          <button onclick="resetPomodoro()" class="rmp-btn bg-slate-100 text-slate-700 px-4 py-2.5 rounded-xl text-xs font-semibold">Reset</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CAMPUS VOICE & STUDY TOOLS -->
+  <section id="section-study" class="space-y-6 hidden">
+    <!-- AI VOICE ASSISTANT: mic + hands-free -->
+    <div class="bg-white p-6 rounded-3xl border border-orange-100 shadow-sm space-y-4">
+      <div class="flex items-center justify-between flex-wrap gap-2">
+        <div><h3 class="text-xl font-bold text-slate-900">🎙️ AI Voice Assistant</h3>
+          <p class="text-xs text-slate-500">Tap the mic and talk, or switch on Hands-free and say “Hey Nex” followed by a command, like “open schedule”.</p></div>
+        <div class="flex items-center gap-2 flex-wrap">
+          <select id="va-lang" onchange="vaLangChange()" aria-label="Voice language" class="px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold">
+            <optgroup label="Indian languages">
+              <option value="en-IN">English (India)</option><option value="ta-IN">தமிழ் (Tamil)</option><option value="hi-IN">हिन्दी (Hindi)</option>
+              <option value="te-IN">తెలుగు (Telugu)</option><option value="ml-IN">മലയാളം (Malayalam)</option><option value="kn-IN">ಕನ್ನಡ (Kannada)</option>
+              <option value="gu-IN">ગુજરાતી (Gujarati)</option><option value="bn-IN">বাংলা (Bengali)</option><option value="mr-IN">मराठी (Marathi)</option>
+              <option value="pa-IN">ਪੰਜਾਬੀ (Punjabi)</option><option value="ur-IN">اردو (Urdu)</option>
+            </optgroup>
+            <optgroup label="World languages">
+              <option value="en-US">English (US)</option><option value="en-GB">English (UK)</option><option value="es-ES">Español (Spanish)</option>
+              <option value="fr-FR">Français (French)</option><option value="de-DE">Deutsch (German)</option><option value="pt-BR">Português (Portuguese)</option>
+              <option value="ru-RU">Русский (Russian)</option><option value="ar-SA">العربية (Arabic)</option><option value="ja-JP">日本語 (Japanese)</option>
+              <option value="ko-KR">한국어 (Korean)</option><option value="zh-CN">中文 (Chinese)</option>
+            </optgroup>
+          </select>
+          <select id="va-pace" aria-label="Voice pace" class="px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold">
+            <option value="relaxed">🐢 Relaxed</option><option value="normal" selected>🙂 Normal</option><option value="quick">⚡ Quick</option>
+          </select>
+        </div>
+      </div>
+      <div id="va-log" class="h-44 overflow-y-auto space-y-2 text-xs bg-slate-50 p-3 rounded-2xl border border-slate-100" aria-live="polite">
+        <p class="text-slate-400 text-center pt-14">Your conversation will appear here</p>
+      </div>
+      <div class="flex items-center gap-3 flex-wrap">
+        <button id="va-mic" onclick="vaMicClick()" aria-label="Microphone" class="rmp-btn w-14 h-14 rounded-full bg-orange-600 hover:bg-orange-700 text-white text-2xl shadow-md flex items-center justify-center">🎤</button>
+        <button id="va-hf" onclick="vaToggleHandsFree()" class="rmp-btn px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-900 text-white hover:bg-slate-800">🎧 Hands-free: OFF</button>
+        <span id="va-status" class="text-xs text-slate-500 font-medium flex-1 min-w-[140px]">Tap the mic to start</span>
+      </div>
+    </div>
+
+    <!-- Deep Academic & Research Tools: Citation Generator & Snippet Sandbox -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="bg-white p-6 rounded-3xl border border-orange-100 shadow-sm space-y-4">
+        <h3 class="text-lg font-bold text-slate-900">📚 APA / IEEE / MLA Citation Generator</h3>
+        <p class="text-xs text-slate-500">Instantly format academic papers and lab references for reports.</p>
+        <div class="space-y-2 text-xs">
+          <input id="cite-author" placeholder="Author (e.g. Smith, John)" class="w-full px-3 py-2 rounded-xl border">
+          <input id="cite-title" placeholder="Paper or Book Title" class="w-full px-3 py-2 rounded-xl border">
+          <div class="grid grid-cols-2 gap-2">
+            <input id="cite-year" placeholder="Year (e.g. 2026)" class="px-3 py-2 rounded-xl border">
+            <select id="cite-style" class="px-3 py-2 rounded-xl border bg-white"><option>APA (7th Edition)</option><option>IEEE Standard</option><option>MLA (9th Edition)</option></select>
+          </div>
+          <button onclick="generateCitation()" class="rmp-btn w-full bg-slate-900 text-white py-2.5 rounded-xl font-semibold">Generate & Copy Citation</button>
+          <div id="cite-output" class="p-3 bg-slate-50 rounded-xl border font-mono text-[11px] text-slate-700">Enter details above.</div>
+        </div>
+      </div>
+
+      <div class="bg-white p-6 rounded-3xl border border-orange-100 shadow-sm space-y-4">
+        <h3 class="text-lg font-bold text-slate-900">💻 Peer Code Review & Snippet Sandbox</h3>
+        <p class="text-xs text-slate-500">Test C, Python, or JavaScript code snippets collaboratively.</p>
+        <div class="space-y-2 text-xs">
+          <select id="sandbox-lang" class="px-3 py-2 rounded-xl border bg-white"><option>JavaScript</option><option>Python</option><option>C++</option></select>
+          <textarea id="sandbox-code" rows="4" placeholder="// Write code here..." class="w-full px-3 py-2 rounded-xl border font-mono text-xs">console.log("Hello Campus Nex!");</textarea>
+          <button onclick="runSandboxCode()" class="rmp-btn w-full bg-orange-600 text-white py-2 rounded-xl font-semibold">Run & Test Output</button>
+          <pre id="sandbox-output" class="p-3 bg-slate-900 text-emerald-400 rounded-xl font-mono text-[11px] h-20 overflow-y-auto">Output console ready...</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="bg-white p-6 rounded-3xl border border-orange-100 shadow-sm space-y-4">
+        <h3 class="text-lg font-bold text-slate-900">AI Assignment & Resume Formatter</h3>
+        <div>
+          <label for="pdf-code-input" class="text-xs font-semibold text-slate-600">Paste raw text, assignment code or notes</label>
+          <textarea id="pdf-code-input" rows="6" placeholder="Paste your text here..." class="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-slate-200 font-mono focus:ring-2 focus:ring-orange-500/50"></textarea>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <button onclick="generatePDF('assignment')" class="rmp-btn bg-orange-600 text-white py-2.5 rounded-xl text-xs font-semibold hover:bg-orange-700 shadow-sm">Download Assignment PDF</button>
+          <button onclick="generatePDF('resume')" class="rmp-btn bg-slate-900 text-white py-2.5 rounded-xl text-xs font-semibold hover:bg-slate-800 shadow-sm">Download Resume PDF</button>
+        </div>
+      </div>
+
+      <div class="bg-white p-6 rounded-3xl border border-orange-100 shadow-sm flex flex-col h-[440px] space-y-3">
+        <div class="flex items-center justify-between">
+          <h3 class="text-lg font-bold text-slate-900">Campus voice chat</h3>
+          <span id="chat-filter-badge" class="text-[10px] bg-orange-50 text-orange-700 px-2.5 py-1 rounded-full font-semibold border border-orange-200"></span>
+        </div>
+        <div class="grid grid-cols-3 gap-2 text-xs">
+          <select id="chat-year" aria-label="Year" onchange="filterChat()" class="px-2 py-1.5 rounded-lg border border-slate-200 bg-white"><option>1st Year</option><option>2nd Year</option><option>3rd Year</option><option>4th Year</option></select>
+          <select id="chat-course" aria-label="Course" onchange="filterChat()" class="px-2 py-1.5 rounded-lg border border-slate-200 bg-white"><option>CSE Core</option><option>CSE AIML</option><option>IT</option></select>
+          <select id="chat-sec" aria-label="Section" onchange="filterChat()" class="px-2 py-1.5 rounded-lg border border-slate-200 bg-white"><option>Section C</option><option>Section A</option><option>Section B</option></select>
+        </div>
+        <div id="chat-messages" class="flex-1 overflow-y-auto space-y-2 pr-1 text-xs bg-slate-50 p-3 rounded-2xl border border-slate-100" aria-live="polite"></div>
+        <div class="flex space-x-2">
+          <input type="text" id="chat-input" maxlength="300" placeholder="Type a message..." aria-label="Message" class="flex-1 px-3 py-2 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-orange-500/50">
+          <button onclick="sendChatMessage()" class="rmp-btn bg-orange-600 text-white px-4 py-2 rounded-xl text-xs font-semibold hover:bg-orange-700 shadow-sm">Send</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FINANCE & PAYTRACK -->
+  <section id="section-finance" class="space-y-6 hidden">
+    <div class="bg-white p-6 rounded-3xl border border-orange-100 shadow-sm space-y-4">
+      <div class="flex items-center justify-between flex-wrap gap-2">
+        <div><h3 class="text-xl font-bold text-slate-900">PayTrack Ledger & Backup</h3>
+          <p class="text-xs text-slate-500">Track expenses, attendance backups, and encrypted JSON export/import.</p></div>
+        <div class="flex gap-2">
+          <button onclick="exportDataJSON()" class="rmp-btn bg-slate-100 text-slate-700 px-3 py-2 rounded-xl text-xs font-semibold hover:bg-slate-200">💾 Export JSON</button>
+          <button onclick="importDataJSONPrompt()" class="rmp-btn bg-slate-100 text-slate-700 px-3 py-2 rounded-xl text-xs font-semibold hover:bg-slate-200">📂 Import JSON</button>
+          <button onclick="toggleExpenseForm()" class="rmp-btn bg-orange-600 text-white px-4 py-2 rounded-xl text-xs font-semibold hover:bg-orange-700 shadow-sm">+ Add Expense</button>
+        </div>
+      </div>
+      <form id="expense-form" class="hidden grid grid-cols-2 sm:grid-cols-5 gap-2 p-3 bg-orange-50/80 rounded-2xl border border-orange-200" onsubmit="addExpense(event)">
+        <input id="exp-cat" required placeholder="Category" aria-label="Category" class="px-3 py-2 rounded-xl border border-slate-200 text-xs">
+        <input id="exp-desc" placeholder="Description" aria-label="Description" class="px-3 py-2 rounded-xl border border-slate-200 text-xs">
+        <input id="exp-amt" required type="number" min="1" step="any" placeholder="Amount (₹)" aria-label="Amount" class="px-3 py-2 rounded-xl border border-slate-200 text-xs">
+        <select id="exp-method" aria-label="Method" class="px-3 py-2 rounded-xl border border-slate-200 text-xs bg-white"><option>UPI</option><option>Cash</option><option>Net Banking</option><option>Card</option></select>
+        <button class="rmp-btn bg-slate-900 text-white rounded-xl text-xs font-semibold py-2 hover:bg-slate-800">Save</button>
+      </form>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="p-4 bg-orange-50/80 rounded-2xl border border-orange-200"><p class="text-xs text-orange-900 font-semibold">Total semester expenses</p><p class="text-2xl font-extrabold text-orange-950 mt-1" id="ledger-total"></p></div>
+        <div class="p-4 bg-emerald-50/80 rounded-2xl border border-emerald-200"><p class="text-xs text-emerald-900 font-semibold">Pending dues</p><p class="text-2xl font-extrabold text-emerald-950 mt-1">₹0</p></div>
+        <div class="p-4 bg-blue-50/80 rounded-2xl border border-blue-200"><p class="text-xs text-blue-900 font-semibold">Receipts saved</p><p class="text-2xl font-extrabold text-blue-950 mt-1" id="receipt-count"></p></div>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-slate-50 text-slate-600 font-semibold"><tr><th class="p-3">Category</th><th class="p-3">Description</th><th class="p-3">Date</th><th class="p-3">Method</th><th class="p-3">Amount</th><th class="p-3">Receipt</th><th class="p-3"><span class="sr-only">Delete</span></th></tr></thead>
+          <tbody id="ledger-tbody" class="divide-y divide-slate-100"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- STUDENT TOOLS & INTERNAL MARKS -->
+  <section id="section-tools" class="space-y-6 hidden">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <!-- Internal Marks & Target Grade Calculator -->
+      <div class="bg-white p-6 rounded-3xl border border-orange-100 shadow-sm space-y-3">
+        <h3 class="text-lg font-bold text-slate-900">🎯 Internal Marks & Target Calculator</h3>
+        <p class="text-xs text-slate-500">Calculate exact minimum exam marks needed to secure your target grade.</p>
+        <div class="grid grid-cols-2 gap-2">
+          <div><label class="text-xs font-semibold text-slate-600">CAT 1 & 2 (out of 50)</label><input id="calc-internals" type="number" value="38" class="w-full mt-1 px-3 py-2 rounded-xl border text-sm"></div>
+          <div><label class="text-xs font-semibold text-slate-600">Target Grade</label><select id="calc-target" class="w-full mt-1 px-3 py-2 rounded-xl border text-sm bg-white"><option>O Grade (90%+)</option><option>A+ Grade (80%+)</option><option>A Grade (70%+)</option></select></div>
+        </div>
+        <button onclick="calcTargetExamScore()" class="rmp-btn w-full bg-orange-600 text-white py-2.5 rounded-xl text-xs font-semibold">Calculate Required Exam Score</button>
+        <p id="target-out" class="text-sm p-3 rounded-xl bg-orange-50 border border-orange-200 text-orange-950 font-medium">Enter your marks above.</p>
+      </div>
+
+      <div class="bg-white p-6 rounded-3xl border border-orange-100 shadow-sm space-y-3">
+        <h3 class="text-lg font-bold text-slate-900">Attendance calculator</h3>
+        <div class="grid grid-cols-3 gap-2">
+          <div><label for="att-a" class="text-xs font-semibold text-slate-600">Attended</label><input id="att-a" type="number" min="0" oninput="calcAttendance()" class="w-full mt-1 px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-orange-500/50"></div>
+          <div><label for="att-h" class="text-xs font-semibold text-slate-600">Held</label><input id="att-h" type="number" min="0" oninput="calcAttendance()" class="w-full mt-1 px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-orange-500/50"></div>
+          <div><label for="att-t" class="text-xs font-semibold text-slate-600">Target %</label><input id="att-t" type="number" value="75" min="1" max="99" oninput="calcAttendance()" class="w-full mt-1 px-3 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-orange-500/50"></div>
+        </div>
+        <p id="att-out" class="text-sm p-3 rounded-xl bg-orange-50/80 border border-orange-200 text-slate-800 font-medium">Enter your classes attended and held.</p>
+      </div>
+
+      <div class="bg-white p-6 rounded-3xl border border-orange-100 shadow-sm space-y-3">
+        <div class="flex items-center justify-between"><h3 class="text-lg font-bold text-slate-900">GPA calculator</h3>
+          <button onclick="addCourse()" class="rmp-btn text-xs bg-slate-900 text-white px-3 py-1.5 rounded-xl font-semibold hover:bg-slate-800">+ Subject</button></div>
+        <div id="course-rows" class="space-y-2"></div>
+        <p id="gpa-out" class="text-sm font-bold p-3 rounded-xl bg-orange-50/80 border border-orange-200 text-orange-950"></p>
+      </div>
+
+      <div class="bg-white p-6 rounded-3xl border border-orange-100 shadow-sm space-y-3">
+        <h3 class="text-lg font-bold text-slate-900">Exam countdown & To-Do</h3>
+        <div class="flex gap-2">
+          <input id="exam-name" placeholder="Exam name" aria-label="Exam name" class="flex-1 min-w-0 px-3 py-2 rounded-xl border border-slate-200 text-sm">
+          <input id="exam-date" type="date" aria-label="Exam date" class="px-3 py-2 rounded-xl border border-slate-200 text-sm">
+          <button onclick="addExam()" class="rmp-btn bg-orange-600 text-white px-3 rounded-xl text-sm font-semibold">Add</button>
+        </div>
+        <ul id="exam-list" class="space-y-2 text-xs"></ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- CULTURE, MERCH & PROB BOX -->
+  <section id="section-submit" class="space-y-6 hidden">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <!-- Anonymous Confessions & Hype Wall with AI Sentiment Filtering -->
+      <div class="bg-white p-6 rounded-3xl border border-orange-100 shadow-sm flex flex-col h-[400px] space-y-3">
+        <div class="flex justify-between items-center"><h3 class="text-lg font-bold text-slate-900">✨ AI Moderated Confessions & Hype Wall</h3><span class="text-[10px] bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full font-bold">🟢 AI Filter Active</span></div>
+        <div id="hype-list" class="flex-1 overflow-y-auto space-y-2 p-3 bg-slate-50 rounded-2xl border text-xs"></div>
+        <div class="flex gap-2">
+          <input id="hype-input" placeholder="Share a wholesome moment or meme..." class="flex-1 px-3 py-2 rounded-xl border text-xs">
+          <button onclick="postHype()" class="rmp-btn bg-orange-600 text-white px-4 py-2 rounded-xl text-xs font-semibold">Post</button>
+        </div>
+      </div>
+
+      <!-- Campus Merch & Gear Booking -->
+      <div class="bg-white p-6 rounded-3xl border border-orange-100 shadow-sm space-y-4">
+        <h3 class="text-lg font-bold text-slate-900">🛍️ Campus Merch & Sports Gear</h3>
+        <div class="grid grid-cols-2 gap-3" id="merch-grid"></div>
+      </div>
+    </div>
+
+    <!-- Prob Box Ideas -->
+    <div class="max-w-xl mx-auto bg-white p-8 rounded-3xl border border-orange-100 shadow-sm space-y-4">
+      <div class="text-center">
+        <div class="bg-orange-100 w-12 h-12 rounded-2xl flex items-center justify-center mx-auto text-xl mb-2"><span class="rmp-float">💡</span></div>
+        <h3 class="text-xl font-bold text-slate-900">Prob Box - Campus Ideas</h3>
+        <p class="text-xs text-slate-500">Describe a problem on campus and how you would fix it.</p>
+      </div>
+      <div class="space-y-3">
+        <div><label for="new-title" class="text-xs font-semibold text-slate-600">Title</label>
+          <input type="text" id="new-title" placeholder="e.g. Library desk booking" class="w-full mt-1 px-4 py-2.5 rounded-xl border border-slate-200 text-sm"></div>
+        <div><label for="new-category" class="text-xs font-semibold text-slate-600">Category</label>
+          <select id="new-category" class="w-full mt-1 px-4 py-2.5 rounded-xl border border-slate-200 text-sm bg-white"><option>Food & Dining</option><option>Bus & Commute</option><option>Hostel Ops</option><option>Academics & Study</option></select></div>
+        <div><label for="new-desc" class="text-xs font-semibold text-slate-600">Problem and solution</label>
+          <textarea id="new-desc" rows="3" placeholder="What problem does this solve?" class="w-full mt-1 px-4 py-2.5 rounded-xl border border-slate-200 text-sm"></textarea></div>
+        <button onclick="submitNewIdea()" class="rmp-btn w-full bg-orange-600 text-white font-semibold py-3 rounded-xl shadow-md hover:bg-orange-700">Add idea to Prob box</button>
+      </div>
+      <div id="idea-list" class="space-y-2 pt-2"></div>
+    </div>
+  </section>
+</main>
+
+<!-- AUTH SCREEN -->
+<div id="auth-screen" class="hidden fixed inset-0 z-[200] bg-gradient-to-br from-slate-900 via-slate-800 to-orange-700 overflow-y-auto p-4">
+  <div class="min-h-full flex items-center justify-center">
+    <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl p-7 space-y-5">
+      <div class="text-center space-y-1">
+        <div class="logo-box h-14 w-14 mx-auto rounded-2xl flex items-center justify-center p-2 shadow-md">
+          <svg viewBox="0 0 100 100" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+            <ellipse cx="50" cy="55" rx="45" ry="12" fill="none" stroke="currentColor" stroke-width="6" transform="rotate(-15 50 55)"/>
+            <path d="M 65 25 A 35 35 0 1 0 65 75" fill="none" stroke="currentColor" stroke-width="12" stroke-linecap="round"/>
+            <path d="M 50 35 L 50 65 L 75 35 L 75 65" fill="none" stroke="currentColor" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M 32 50 L 32 60 L 42 60 L 42 50 Z M 37 42 L 32 47 L 42 47 Z" fill="currentColor"/>
+          </svg>
+        </div>
+        <h2 class="text-xl font-extrabold text-slate-900 tracking-tight">CAMPUS NEX</h2>
+        <p class="text-xs text-slate-500">Sign in to open your ultimate student companion</p>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2 bg-slate-100 p-1 rounded-2xl">
+        <button id="auth-tab-login" onclick="showAuthTab('login')" class="rmp-btn py-2 rounded-xl text-xs font-bold">Log in</button>
+        <button id="auth-tab-register" onclick="showAuthTab('register')" class="rmp-btn py-2 rounded-xl text-xs font-bold">Create account</button>
+      </div>
+
+      <p id="auth-msg" class="hidden text-xs font-semibold p-3 rounded-xl border" role="alert"></p>
+
+      <form id="login-form" class="space-y-3" onsubmit="doLogin(event)">
+        <div><label for="li-id" class="text-xs font-semibold text-slate-600">Roll number or email</label>
+          <input id="li-id" required autocomplete="username" class="w-full mt-1 px-4 py-2.5 rounded-xl border border-slate-200 text-sm"></div>
+        <div><label for="li-pw" class="text-xs font-semibold text-slate-600">Password</label>
+          <input id="li-pw" type="password" required autocomplete="current-password" class="w-full mt-1 px-4 py-2.5 rounded-xl border border-slate-200 text-sm"></div>
+        <button class="rmp-btn w-full bg-orange-600 text-white font-semibold py-3 rounded-xl shadow-md hover:bg-orange-700">Log in</button>
+      </form>
+
+      <form id="register-form" class="hidden space-y-3" onsubmit="doRegister(event)">
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <input id="rg-name" required placeholder="Full name" aria-label="Full name" class="col-span-2 px-3 py-2.5 rounded-xl border border-slate-200">
+          <input id="rg-roll" required placeholder="Roll number" aria-label="Roll number" class="px-3 py-2.5 rounded-xl border border-slate-200">
+          <input id="rg-email" required type="email" placeholder="Email" aria-label="Email" class="px-3 py-2.5 rounded-xl border border-slate-200">
+          <select id="rg-dept" aria-label="Department" class="px-3 py-2.5 rounded-xl border border-slate-200 bg-white"><option>CSE Core</option><option>CSE AIML</option><option>IT</option><option>ECE</option></select>
+          <select id="rg-year" aria-label="Year" class="px-3 py-2.5 rounded-xl border border-slate-200 bg-white"><option>1st Year</option><option>2nd Year</option><option>3rd Year</option><option>4th Year</option></select>
+          <select id="rg-sec" aria-label="Section" class="px-3 py-2.5 rounded-xl border border-slate-200 bg-white"><option>Section A</option><option>Section B</option><option>Section C</option><option>Section D</option></select>
+          <select id="rg-mode" aria-label="Residence" class="px-3 py-2.5 rounded-xl border border-slate-200 bg-white"><option>Hostel</option><option>Day Scholar</option></select>
+          <input id="rg-pw" required type="password" minlength="6" autocomplete="new-password" placeholder="Password (min 6)" aria-label="Password" class="px-3 py-2.5 rounded-xl border border-slate-200">
+          <input id="rg-pw2" required type="password" minlength="6" autocomplete="new-password" placeholder="Confirm password" aria-label="Confirm password" class="px-3 py-2.5 rounded-xl border border-slate-200">
+        </div>
+        <button class="rmp-btn w-full bg-orange-600 text-white font-semibold py-3 rounded-xl shadow-md hover:bg-orange-700">Create account</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- SOS Emergency Modal -->
+<div id="sos-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm hidden items-center justify-center z-50 p-4" onclick="if(event.target===this)closeSOSModal()">
+  <div class="bg-white max-w-md w-full p-6 rounded-3xl space-y-4 shadow-2xl rmp-slide-up border-2 border-rose-500">
+    <div class="flex items-center justify-between">
+      <h3 class="font-bold text-rose-600 text-base flex items-center gap-2">🚨 Emergency SOS & Helplines</h3>
+      <button onclick="closeSOSModal()" class="text-slate-400 hover:text-slate-600 font-bold p-1">✕</button>
+    </div>
+    <p class="text-xs text-slate-600">Quickly contact campus security, wardens or medical emergency teams.</p>
+    <div class="space-y-2 text-xs">
+      <a href="tel:112" class="block p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-950 font-bold flex items-center justify-between"><span>🛡️ Campus Security Control Room</span><span>Call 112 / Ext 500</span></a>
+      <a href="tel:108" class="block p-3 rounded-2xl bg-blue-50 border border-blue-200 text-blue-950 font-bold flex items-center justify-between"><span>🏥 Campus Medical Center / Ambulance</span><span>Call 108</span></a>
+      <a href="tel:9876543210" class="block p-3 rounded-2xl bg-amber-50 border border-amber-200 text-amber-950 font-bold flex items-center justify-between"><span>🏠 Chief Hostel Warden Helpline</span><span>Call Warden</span></a>
+    </div>
+    <button onclick="triggerEmergencyAlert()" class="rmp-btn w-full bg-rose-600 hover:bg-rose-700 text-white py-3 rounded-xl font-bold text-xs shadow-md">Broadcast GPS Distress Alert</button>
+  </div>
+</div>
+
+<!-- Spotlight Command Palette (Cmd+K) -->
+<div id="cmd-palette" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-start justify-center z-[250] p-4 pt-24" onclick="if(event.target===this)closeCmdPalette()">
+  <div class="bg-white max-w-xl w-full rounded-2xl shadow-2xl overflow-hidden border border-slate-200 rmp-slide-up">
+    <div class="p-3 border-b border-slate-100 flex items-center gap-2">
+      <span class="text-slate-400">🔍</span>
+      <input id="cmd-input" type="search" placeholder="Type a command or module name (e.g. bus, gpa, mess, SOS)..." oninput="filterCmds()" class="w-full text-sm outline-none bg-transparent">
+      <button onclick="closeCmdPalette()" class="text-xs text-slate-400 font-bold px-2 py-1 rounded bg-slate-100">ESC</button>
+    </div>
+    <div id="cmd-results" class="max-h-72 overflow-y-auto p-2 space-y-1 text-xs"></div>
+  </div>
+</div>
+
+<!-- Payment modal -->
+<div id="payment-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-50 p-4" onclick="if(event.target===this)closeModal()">
+  <div class="bg-white max-w-md w-full p-6 rounded-3xl space-y-4 shadow-2xl max-h-[95vh] overflow-y-auto rmp-slide-up">
+    <div class="flex items-center justify-between">
+      <h3 class="font-bold text-slate-900 text-sm" id="modal-item-title">Checkout</h3>
+      <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 font-bold p-1">✕</button>
+    </div>
+    <div class="flex items-center justify-between bg-slate-50 rounded-2xl p-3 text-sm border border-slate-100">
+      <div class="flex items-center gap-3">
+        <button onclick="changeQty(-1)" class="w-8 h-8 rounded-full bg-white border font-bold shadow-xs">−</button>
+        <span id="qty" class="font-bold w-4 text-center inline-block">1</span>
+        <button onclick="changeQty(1)" class="w-8 h-8 rounded-full bg-white border font-bold shadow-xs">+</button>
+      </div>
+      <span class="font-extrabold text-orange-700 text-base" id="modal-total"></span>
+    </div>
+    <div class="grid grid-cols-2 gap-3">
+      <button onclick="selectPaymentMode('upi')" id="btn-upi" class="rmp-btn p-3 rounded-2xl border-2 font-semibold text-xs border-orange-500 bg-orange-50 text-orange-950">📱 UPI QR</button>
+      <button onclick="selectPaymentMode('cash')" id="btn-cash" class="rmp-btn p-3 rounded-2xl border-2 font-semibold text-xs border-slate-200 text-slate-600">💵 Cash on Pickup</button>
+    </div>
+    <div id="upi-container" class="space-y-2">
+      <div class="flex justify-center bg-slate-50 p-4 rounded-2xl border"><div id="qrcode-container"></div></div>
+      <p class="text-[11px] text-center text-slate-500">Scan with GPay, PhonePe or Paytm.</p>
+    </div>
+    <div id="cash-container" class="hidden p-4 bg-slate-50 rounded-2xl border text-center text-xs text-slate-700">
+      <p class="font-semibold">Pay exact cash at Express Counter.</p>
+    </div>
+    <button onclick="confirmOrder()" class="rmp-btn w-full bg-orange-600 text-white py-3 rounded-xl font-semibold text-sm hover:bg-orange-700 shadow-md">Confirm Order</button>
+  </div>
+</div>
+
+<div id="toast-box" aria-live="polite"></div>
+<!-- Floating voice controls (visible on every tab) -->
+<div id="va-fab" class="fixed bottom-4 right-4 z-40 flex flex-col items-end gap-2">
+  <span id="va-fab-status" class="hidden max-w-[220px] text-[11px] font-semibold bg-slate-900 text-white px-3 py-1.5 rounded-xl shadow-lg"></span>
+  <div class="flex items-center gap-2">
+    <button id="va-fab-hf" onclick="vaToggleHandsFree()" aria-label="Hands-free mode" class="rmp-btn px-3 py-2 rounded-full text-[11px] font-bold text-white bg-slate-900 shadow-lg">🎧 Hands-free: OFF</button>
+    <button id="va-fab-mic" onclick="vaMicClick()" aria-label="Microphone" class="rmp-btn w-14 h-14 rounded-full bg-orange-600 hover:bg-orange-700 text-white text-2xl shadow-lg flex items-center justify-center">🎤</button>
+  </div>
+</div>
+
+
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const inr = n => '₹' + Number(n).toLocaleString('en-IN');
+const SESSION = (() => { try { return localStorage.getItem('cn_session'); } catch { return null; } })();
+const PFX = SESSION ? 'cnu_' + SESSION + '_' : 'cn_guest_';
+const load = (k, d) => { try { const v = localStorage.getItem(PFX + k); return v ? JSON.parse(v) : d; } catch { return d; } };
+const save = (k, v) => { try { localStorage.setItem(PFX + k, JSON.stringify(v)); } catch { toast('Storage is full.'); } };
+
+function toast(msg) {
+  const t = document.createElement('div'); t.className = 'rmp-toast'; t.textContent = msg;
+  $('toast-box').appendChild(t);
+  setTimeout(() => t.classList.add('rmp-out'), 2600);
+  setTimeout(() => t.remove(), 3000);
+}
+function makeQR(el, text, size) { el.innerHTML = ''; new QRCode(el, { text, width: size, height: size }); }
+
+let isDark = load('dark_mode', false);
+function applyDark() {
+  document.body.classList.toggle('dark', isDark);
+  $('dark-btn').textContent = isDark ? '☀️' : '🌙';
+}
+function toggleDark() {
+  isDark = !isDark; save('dark_mode', isDark); try { localStorage.setItem('cn_theme_dark', isDark ? '1' : '0'); } catch {} applyDark();
+  toast(isDark ? '🌙 Dark mode enabled' : '☀️ Light mode enabled');
+}
+
+function confetti() {
+  const colors = isDark ? ['#ff2e7e', '#1fa2ff', '#ff8fb8', '#5cc4ff', '#ffffff']
+                        : ['#f5a30a', '#ffc233', '#4a1259', '#8a2c7e', '#ffffff'];
+  for (let i = 0; i < 45; i++) {
+    const s = document.createElement('span'); s.className = 'rmp-confetti';
+    s.style.cssText = `left:50%;top:45%;background:${colors[i % 5]};--x:${(Math.random() - .5) * 600}px;--y:${-150 - Math.random() * 250}px;--r:${Math.random() * 720}deg;`;
+    document.body.appendChild(s); setTimeout(() => s.remove(), 1300);
+  }
+}
+
+let avatar = load('avatar', null);
+function renderAvatar() {
+  $('avatar-btn').innerHTML = avatar ? `<img src="${avatar}" alt="Photo" class="w-full h-full object-cover">` : '👤';
+  $('avatar-del').classList.toggle('hidden', !avatar);
+}
+function changeAvatar() {
+  const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*';
+  inp.onchange = () => {
+    const f = inp.files[0]; if (!f) return;
+    const fr = new FileReader();
+    fr.onload = () => { avatar = fr.result; save('avatar', avatar); renderAvatar(); renderHome(); toast('📷 Avatar updated'); };
+    fr.readAsDataURL(f);
+  };
+  inp.click();
+}
+function removeAvatar() { avatar = null; save('avatar', null); renderAvatar(); renderHome(); toast('Avatar removed'); }
+
+const tabs = [
+  ['home','🚀 Home'], ['canteen','🍔 Canteen'], ['bus','🚌 Mobility'], ['hostel','🏠 Hostel'],
+  ['academic','📅 Academics'], ['collab','🧠 Collab'], ['life','🔍 Campus Life'],
+  ['career','⚡ Career'], ['study','📚 AI Voice'], ['finance','💰 Finance & Backup'],
+  ['tools','🎓 Tools'], ['submit','💡 Prob Box']
+];
+
+$('tab-bar').innerHTML = tabs.map(([id, label]) =>
+  `<button role="tab" id="tab-${id}" onclick="switchTab('${id}')" class="rmp-btn tab-btn px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap">${label}</button>`
+).join('');
+
+function switchTab(tabId) {
+  tabs.forEach(([id]) => {
+    const on = id === tabId;
+    $('section-' + id).classList.toggle('hidden', !on);
+    if (on) $('section-' + id).classList.add('rmp-enter');
+    const b = $('tab-' + id);
+    if (b) {
+      b.className = 'rmp-btn tab-btn px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap ' +
+        (on ? 'bg-orange-600 text-white shadow-md' : 'text-slate-600 hover:bg-orange-50');
+    }
+  });
+  if (tabId === 'home') renderHome();
+  save('tab', tabId);
+}
+
+// Weather & AQI Micro-Widget
+function refreshWeather() {
+  const temps = ['31°C • Ramapuram Campus', '32°C • Chennai Central', '30°C • Vadapalani'];
+  const aqis = ['AQI: 42 (Good)', 'AQI: 55 (Moderate)', 'AQI: 38 (Good)'];
+  const tips = ['Pleasant breeze. Great day for walking between blocks!', 'Sunny afternoon. Stay hydrated!', 'Mild weather. Perfect outdoor study conditions.'];
+  const idx = Math.floor(Math.random() * temps.length);
+  $('weather-temp').textContent = temps[idx];
+  $('weather-aqi').textContent = aqis[idx];
+  $('weather-tip').textContent = tips[idx];
+  toast('🌤️ Micro-climate weather updated');
+}
+
+// AR Campus Navigation
+let arActive = false;
+async function toggleARCamera() {
+  arActive = !arActive;
+  const viewport = $('ar-viewport');
+  const btn = $('ar-toggle-btn');
+  viewport.classList.toggle('hidden', !arActive);
+  btn.textContent = arActive ? 'Turn Off AR Camera' : 'Turn On AR Camera';
+  if (arActive) {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      $('ar-video').srcObject = stream;
+    } catch {
+      toast('Camera permission denied or unavailable');
+    }
+  } else {
+    const stream = $('ar-video').srcObject;
+    if (stream) stream.getTracks().forEach(t => t.stop());
+  }
+}
+function updateARDestination(dest) {
+  $('ar-target-label').textContent = dest;
+  toast(`AR Waypoint updated to ${dest}`);
+}
+
+// Virtual Campus Scavenger Hunt / Easter Eggs
+let eggsFound = load('eggs_found', [false, false, false, false]);
+function findEgg(idx) {
+  if (eggsFound[idx]) { toast('You already unlocked this Easter Egg!'); return; }
+  eggsFound[idx] = true; save('eggs_found', eggsFound);
+  $('egg-status-' + idx).textContent = '✓ Unlocked!';
+  const foundCount = eggsFound.filter(Boolean).length;
+  $('egg-score').textContent = `Eggs Found: ${foundCount} / 4`;
+  confetti();
+  toast(foundCount === 4 ? '🎉 Congratulations! Unlocked 20% Canteen Discount Code: NEX-EGG-2026' : '🥚 Easter Egg discovered! Keep exploring.');
+}
+
+// Citation Generator
+function generateCitation() {
+  const author = $('cite-author').value.trim() || 'Author, A.';
+  const title = $('cite-title').value.trim() || 'Untitled Document';
+  const year = $('cite-year').value.trim() || '2026';
+  const style = $('cite-style').value;
+  let formatted = '';
+  if (style.includes('APA')) {
+    formatted = `${author} (${year}). ${title}. Campus Academic Repository.`;
+  } else if (style.includes('IEEE')) {
+    formatted = `${author}, "${title}," Campus Tech Press, ${year}.`;
+  } else {
+    formatted = `${author}. "${title}." ${year}.`;
+  }
+  $('cite-output').textContent = formatted;
+  navigator.clipboard?.writeText(formatted);
+  toast('Citation generated & copied to clipboard!');
+}
+
+// Peer Code Review & Snippet Sandbox
+function runSandboxCode() {
+  const code = $('sandbox-code').value;
+  const lang = $('sandbox-lang').value;
+  let out = '';
+  try {
+    if (lang === 'JavaScript') {
+      let logs = [];
+      const origLog = console.log;
+      console.log = (...args) => logs.push(args.join(' '));
+      new Function(code)();
+      console.log = origLog;
+      out = logs.join('\n') || 'Executed successfully with no console output.';
+    } else {
+      out = `[Simulated ${lang} Execution]\nOutput:\n> Hello from Campus Sandbox!\n> Process finished with exit code 0.`;
+    }
+  } catch (err) {
+    out = 'Error: ' + err.message;
+  }
+  $('sandbox-output').textContent = out;
+  toast('Code executed in sandbox');
+}
+
+// Canteen & Crowd Meter - Exhaustive 31 Items with Reliable Wikimedia/Direct Food Images & onerror fallback
+// Photo chain: local images/ file -> Wikimedia file link -> Wikipedia article photo -> emoji
+function imgFail(el, emoji) {
+  const stage = +(el.dataset.stage || 0);
+  el.dataset.stage = stage + 1;
+  if (stage === 0 && el.dataset.web) { el.src = el.dataset.web; return; }
+  if (stage <= 1 && el.dataset.wiki) {
+    el.dataset.stage = 2;
+    fetch('https://en.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(el.dataset.wiki.replace(/ /g, '_')))
+      .then(r => r.json())
+      .then(d => { const u = (d.thumbnail && d.thumbnail.source) || (d.originalimage && d.originalimage.source); if (u) el.src = u; else throw 0; })
+      .catch(() => { el.onerror = null; el.parentElement.innerHTML = '<span style="font-size:3.5rem">' + emoji + '</span>'; });
+    return;
+  }
+  el.onerror = null;
+  el.parentElement.innerHTML = '<span style="font-size:3.5rem">' + emoji + '</span>';
+}
+
+let crowdState = 1;
+const crowdTexts = ['🟢 Quiet (Wait ~2 mins)', '🟡 Moderate (Wait ~8 mins)', '🔴 Packed (Long queue)'];
+function cycleCrowd() {
+  crowdState = (crowdState + 1) % 3;
+  $('crowd-status-text').textContent = crowdTexts[crowdState];
+  toast('Canteen crowd status updated');
+}
+
+const canteenItems = [
+  { id: 1, name: "Chicken Biryani", price: 120, stall: "Main Canteen", img: "images/1.jpg", web: "https://commons.wikimedia.org/wiki/Special:FilePath/Chicken_Biryani_-_The_hanging_plates.jpg?width=600", wiki: "Biryani", emoji: "🍛" },
+  { id: 2, name: "Veg Meals / South Indian Thali", price: 80, stall: "Main Canteen", img: "images/2.jpg", web: "https://commons.wikimedia.org/wiki/Special:FilePath/South_Indian_Thali.jpg?width=600", wiki: "Thali", emoji: "🍱" },
+  { id: 3, name: "Paneer Cheese Roll", price: 70, stall: "Java Green", img: "images/3.jpg", web: "https://commons.wikimedia.org/wiki/Special:FilePath/Kathi_roll_IMG_4905.jpg?width=600", wiki: "Kati roll", emoji: "🌯" },
+  { id: 4, name: "Cold Coffee + Sandwich Combo", price: 99, stall: "Java Green", img: "images/4.jpg", web: "https://commons.wikimedia.org/wiki/Special:FilePath/Iced_Coffee_%283437505298%29.jpg?width=600", wiki: "Iced coffee", emoji: "🥪" },
+  { id: 5, name: "Egg Puff & Samosa", price: 30, stall: "Bakery", img: "images/5.jpg", web: "https://commons.wikimedia.org/wiki/Special:FilePath/Samosa_chole.jpg?width=600", wiki: "Samosa", emoji: "🥟" },
+  { id: 6, name: "Masala Dosa with Sambar", price: 60, stall: "Main Canteen", img: "images/6.jpg", web: "https://commons.wikimedia.org/wiki/Special:FilePath/Masala_Dosa.jpg?width=600", wiki: "Masala dosa", emoji: "🥞" },
+  { id: 7, name: "Idli Vada Combo", price: 45, stall: "Main Canteen", img: "images/7.jpg", web: "https://commons.wikimedia.org/wiki/Special:FilePath/Idli_Vada.jpg?width=600", wiki: "Idli", emoji: "🍘" },
+  { id: 8, name: "Puri Masala (2 pcs)", price: 55, stall: "Main Canteen", img: "images/8.jpg", web: "https://commons.wikimedia.org/wiki/Special:FilePath/Poori_masala.jpg?width=600", wiki: "Poori", emoji: "🫓" },
+  { id: 9, name: "Chicken Fried Rice", price: 110, stall: "Main Canteen", img: "images/9.jpg", web: "https://commons.wikimedia.org/wiki/Special:FilePath/Fried_rice_f.jpg?width=600", wiki: "Fried rice", emoji: "🍚" },
+  { id: 10, name: "Veg Hakka Noodles", price: 95, stall: "Main Canteen", img: "images/10.jpg", web: "https://commons.wikimedia.org/wiki/Special:FilePath/Veg_Hakka_Noodles.jpg?width=600", wiki: "Hakka noodles", emoji: "🍜" },
+  { id: 11, name: "Cheesy Burger & Fries", price: 130, stall: "Java Green", img: "images/11.jpg", web: "https://commons.wikimedia.org/wiki/Special:FilePath/RedRobin-Cheeseburger-Fries.jpg?width=600", wiki: "Cheeseburger", emoji: "🍔" },
+  { id: 12, name: "Peri Peri French Fries", price: 75, stall: "Java Green", img: "images/12.jpg", web: "https://commons.wikimedia.org/wiki/Special:FilePath/French_Fries_A.jpg?width=600", wiki: "French fries", emoji: "🍟" },
+  { id: 13, name: "Crispy Chicken Burger", price: 140, stall: "Java Green", img: "images/13.jpg", web: "https://commons.wikimedia.org/wiki/Special:FilePath/Chicken_burger.jpg?width=600", wiki: "Chicken sandwich", emoji: "🍔" },
+  { id: 14, name: "Chocolate Brownie Shake", price: 110, stall: "Java Green", img: "images/14.jpg", web: "https://commons.wikimedia.org/wiki/Special:FilePath/Chocolate_Milkshake.jpg?width=600", wiki: "Milkshake", emoji: "🥤" },
+  { id: 15, name: "Fresh Lime Soda (Sweet/Salt)", price: 35, stall: "Java Green", img: "images/15.jpg", web: "https://commons.wikimedia.org/wiki/Special:FilePath/Lime_soda.jpg?width=600", wiki: "Limeade", emoji: "🍋" },
+  { id: 16, name: "KitKat Milkshake", price: 120, stall: "Java Green", img: "images/16.jpg", web: "https://commons.wikimedia.org/wiki/Special:FilePath/Chocolate_Milkshake.jpg?width=600", wiki: "Milkshake", emoji: "🍫" },
+  { id: 17, name: "Creamy White Sauce Pasta", price: 130, stall: "Java Green", img: "images/17.jpg", web: "https://commons.wikimedia.org/wiki/Special:FilePath/Penne_pasta_with_tomato_sauce_and_mozzarella_cheese.jpg?width=600", wiki: "Pasta", emoji: "🍝" },
+  { id: 18, name: "BBQ Chicken Pizza Slice", price: 85, stall: "Java Green", img: "images/18.jpg", web: "https://commons.wikimedia.org/wiki/Special:FilePath/Eq_it-na_pizza-margherita_sep2005_sml.jpg?width=600", wiki: "Pizza", emoji: "🍕" },
+  { id: 19, name: "Veg Margherita Pizza Slice", price: 75, stall: "Java Green", img: "images/19.jpg", web: "https://commons.wikimedia.org/wiki/Special:FilePath/Eq_it-na_pizza-margherita_sep2005_sml.jpg?width=600", wiki: "Pizza", emoji: "🍕" },
+  { id: 20, name: "Chicken Momos (6 pcs)", price: 90, stall: "Main Canteen", img: "images/20.jpg", web: "https://commons.wikimedia.org/wiki/Special:FilePath/Momo_dumpling.jpg?width=600", wiki: "Momo (food)", emoji: "🥟" },
+  { id: 21, name: "Veg Steamed Momos (6 pcs)", price: 75, stall: "Main Canteen", img: "images/21.jpg", web: "https://commons.wikimedia.org/wiki/Special:FilePath/Momo_dumpling.jpg?width=600", wiki: "Momo (food)", emoji: "🥟" },
+  { id: 22, name: "Chocolate Truffle Pastry", price: 65, stall: "Bakery", img: "images/22.jpg", web: "https://commons.wikimedia.org/wiki/Special:FilePath/Chocolate_cake_with_icing_and_candles.jpg?width=600", wiki: "Chocolate cake", emoji: "🍰" },
+  { id: 23, name: "Black Forest Cake Slice", price: 70, stall: "Bakery", img: "images/23.jpg", web: "https://commons.wikimedia.org/wiki/Special:FilePath/Chocolate_cake_with_icing_and_candles.jpg?width=600", wiki: "Black Forest gateau", emoji: "🎂" },
+  { id: 24, name: "Butter Croissant", price: 50, stall: "Bakery", img: "images/24.jpg", web: "https://commons.wikimedia.org/wiki/Special:FilePath/Croissant_top_-_A%C3%A9roport_Charles_de_Gaulle_%282012%29.jpg?width=600", wiki: "Croissant", emoji: "🥐" },
+  { id: 25, name: "Chicken Tikka Roll", price: 95, stall: "Main Canteen", img: "images/25.jpg", web: "https://commons.wikimedia.org/wiki/Special:FilePath/Kathi_roll_IMG_4905.jpg?width=600", wiki: "Kati roll", emoji: "🌯" },
+  { id: 26, name: "Special Filter Coffee", price: 25, stall: "Main Canteen", img: "images/26.jpg", web: "https://commons.wikimedia.org/wiki/Special:FilePath/A_small_cup_of_Coffee.jpg?width=600", wiki: "Filter coffee", emoji: "☕" },
+  { id: 27, name: "Masala Chai", price: 20, stall: "Main Canteen", img: "images/27.jpg", web: "https://commons.wikimedia.org/wiki/Special:FilePath/Masala_Tea_-_2.jpg?width=600", wiki: "Masala chai", emoji: "🍵" },
+  { id: 28, name: "Garlic Bread with Cheese", price: 90, stall: "Java Green", img: "images/28.jpg", web: "https://commons.wikimedia.org/wiki/Special:FilePath/Garlic_bread_with_cheese.jpg?width=600", wiki: "Garlic bread", emoji: "🥖" },
+  { id: 29, name: "Paneer Tikka Sandwich", price: 85, stall: "Java Green", img: "images/29.jpg", web: "https://commons.wikimedia.org/wiki/Special:FilePath/Grilled_cheese_sandwich_close-up.jpg?width=600", wiki: "Sandwich", emoji: "🥪" },
+  { id: 30, name: "Fruit Salad with Ice Cream", price: 90, stall: "Bakery", img: "images/30.jpg", web: "https://commons.wikimedia.org/wiki/Special:FilePath/Salad_de_frutas_com_sorvete.jpg?width=600", wiki: "Fruit salad", emoji: "🍨" },
+  { id: 31, name: "Mineral Water (1L)", price: 20, stall: "Main Canteen", img: "images/31.jpg", web: "https://commons.wikimedia.org/wiki/Special:FilePath/Bottled_water_icon.png?width=600", wiki: "Bottled water", emoji: "💧" }
+];
+let stallFilter = 'All';
+
+function renderCanteen() {
+  const q = $('food-search').value.toLowerCase();
+  const stalls = ['All', ...new Set(canteenItems.map(i => i.stall))];
+  $('stall-chips').innerHTML = stalls.map(s =>
+    `<button onclick="setStall('${s}')" class="rmp-btn px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap ${stallFilter === s ? 'bg-orange-600 text-white shadow-sm' : 'bg-white text-slate-600 border'}">${s}</button>`
+  ).join('');
+
+  const filtered = canteenItems.filter(i => (stallFilter === 'All' || i.stall === stallFilter) && (!q || i.name.toLowerCase().includes(q)));
+  $('canteen-items-grid').innerHTML = filtered.map(item => `
+    <div class="rmp-card bg-white rounded-3xl p-5 border border-orange-100 shadow-sm flex flex-col justify-between space-y-4">
+      <div class="space-y-3">
+        <div class="h-36 rounded-2xl overflow-hidden bg-orange-50 flex items-center justify-center">
+          <img loading="lazy" decoding="async" src="${item.img}" data-web="${item.web}" data-wiki="${item.wiki}" alt="${item.name}" class="w-full h-full object-cover" onerror="imgFail(this,'${item.emoji}')">
+        </div>
+        <div class="flex justify-between items-start">
+          <div><h4 class="font-bold text-slate-900 text-sm">${item.name}</h4><p class="text-[11px] text-slate-500">${item.stall}</p></div>
+          <span class="font-extrabold text-orange-600 text-sm">${inr(item.price)}</span>
+        </div>
+      </div>
+      <button onclick="openModal(${item.id})" class="rmp-btn w-full bg-slate-900 text-white py-2.5 rounded-xl text-xs font-semibold hover:bg-slate-800">Order Express</button>
+    </div>
+  `).join('');
+  if (!filtered.length) $('canteen-items-grid').innerHTML = '<div class="col-span-full text-center py-12 text-slate-500"><p class="text-4xl mb-2">🍽️</p><p class="font-bold text-slate-700">No dishes found</p><p class="text-xs">Try a different word or pick another stall.</p></div>';
+  const g = $('canteen-items-grid'); g.classList.remove('stagger');
+  if (window.__stag) { void g.offsetWidth; g.classList.add('stagger'); window.__stag = false; }
+}
+function setStall(s) { stallFilter = s; window.__stag = true; renderCanteen(); }
+$('food-search').addEventListener('input', renderCanteen);
+
+let activeItem = null, activeQty = 1, activePayMode = 'upi';
+function openModal(id) {
+  activeItem = canteenItems.find(i => i.id === id); if (!activeItem) return;
+  activeQty = 1; $('modal-item-title').textContent = activeItem.name + ' — Checkout';
+  updateModalTotal(); $('payment-modal').classList.remove('hidden'); $('payment-modal').classList.add('flex');
+}
+function openModalById(id) { openModal(id); }
+function closeModal() { $('payment-modal').classList.add('hidden'); $('payment-modal').classList.remove('flex'); }
+function changeQty(d) { activeQty = Math.max(1, activeQty + d); updateModalTotal(); }
+function updateModalTotal() {
+  $('qty').textContent = activeQty; const tot = activeItem.price * activeQty;
+  $('modal-total').textContent = inr(tot);
+  if (activePayMode === 'upi') makeQR($('qrcode-container'), `upi://pay?pa=campusnex@upi&am=${tot}&cu=INR`, 130);
+}
+function selectPaymentMode(mode) {
+  activePayMode = mode;
+  $('btn-upi').className = `rmp-btn p-3 rounded-2xl border-2 font-semibold text-xs ${mode === 'upi' ? 'border-orange-500 bg-orange-50 text-orange-950' : 'border-slate-200 text-slate-600'}`;
+  $('btn-cash').className = `rmp-btn p-3 rounded-2xl border-2 font-semibold text-xs ${mode === 'cash' ? 'border-orange-500 bg-orange-50 text-orange-950' : 'border-slate-200 text-slate-600'}`;
+  $('upi-container').classList.toggle('hidden', mode !== 'upi');
+  $('cash-container').classList.toggle('hidden', mode === 'upi');
+}
+function confirmOrder() {
+  closeModal(); confetti(); toast(`🎉 Order placed! Token: CN-${Math.floor(100+Math.random()*900)}`);
+  addExpenseDirect('Canteen', `${activeItem.name} (x${activeQty})`, activeItem.price * activeQty, activePayMode.toUpperCase());
+}
+
+// Mobility & Carpool
+let mobilityTab = 'bus';
+function setMobilityTab(t) {
+  mobilityTab = t;
+  $('mob-tab-bus').className = `rmp-btn p-2.5 rounded-xl font-bold ${t === 'bus' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700'}`;
+  $('mob-tab-pool').className = `rmp-btn p-2.5 rounded-xl font-bold ${t === 'pool' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700'}`;
+  $('panel-bus-tracker').classList.toggle('hidden', t !== 'bus');
+  $('panel-carpool').classList.toggle('hidden', t !== 'pool');
+  if (t === 'pool') renderCarpool();
+}
+
+const busRoutes = [
+  { id: 'r1', name: 'Route 12 - Tambaram Express', start: 'Tambaram', current: 'Guindy', status: 'On Time', progress: 45, occupancy: 'Medium' },
+  { id: 'r2', name: 'Route 05 - Vadapalani Shuttle', start: 'Vadapalani Forum', current: 'Arcot Road', status: 'On Time', progress: 65, occupancy: 'High' },
+  { id: 'r3', name: 'Route 21 - Porur Metro Express', start: 'Porur Junction', current: 'Valasaravakkam', status: 'Delayed 5m', progress: 30, occupancy: 'Low' }
+];
+let activeBus = busRoutes[0];
+function renderBus() {
+  $('bus-routes-list').innerHTML = busRoutes.map((b, idx) => `
+    <div onclick="selectBusRoute(${idx})" class="p-3.5 rounded-2xl border cursor-pointer transition-all ${activeBus.id === b.id ? 'border-orange-500 bg-orange-50/80 shadow-xs' : 'border-slate-200 bg-white hover:bg-slate-50'}">
+      <div class="flex justify-between"><p class="font-bold text-xs text-slate-900">${b.name}</p><span class="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold">${b.status}</span></div>
+      <p class="text-[11px] text-slate-500 mt-1">From: ${b.start}</p>
+    </div>
+  `).join('');
+  $('active-bus-title').textContent = activeBus.name;
+  $('active-bus-status').textContent = activeBus.status;
+  $('bus-start').textContent = activeBus.start;
+  $('bus-current-stop').textContent = activeBus.current;
+  $('bus-progress').style.width = activeBus.progress + '%';
+  $('bus-icon').style.left = activeBus.progress + '%';
+  $('bus-occupancy-badge').textContent = activeBus.occupancy + ' Occupancy';
+  $('bus-occupancy-badge').className = `text-white font-bold text-xs px-2.5 py-1 rounded-lg inline-block mt-0.5 ${activeBus.occupancy === 'High' ? 'bg-rose-500' : 'bg-emerald-500'}`;
+}
+function selectBusRoute(idx) { activeBus = busRoutes[idx]; renderBus(); }
+function simulateDriverMove() { activeBus.progress = (activeBus.progress + 20) % 100; renderBus(); toast('📍 GPS location updated'); }
+function updateSeatRadar(c) { activeBus.occupancy = c === 'green' ? 'Low' : c === 'yellow' ? 'Medium' : 'High'; renderBus(); toast('Seat status updated'); }
+
+let carpoolList = load('carpools', [
+  { from: 'Vadapalani (Forum)', to: 'SRM Ramapuram', time: '08:15 AM', mode: 'Auto Share', seats: 2, contact: 'Rahul (98401XXXXX)' },
+  { from: 'Porur', to: 'SRM Ramapuram', time: '08:30 AM', mode: 'Car Ride', seats: 1, contact: 'Asif (98842XXXXX)' },
+  { from: 'Guindy Metro', to: 'SRM Ramapuram', time: '08:45 AM', mode: 'Bike Pool', seats: 1, contact: 'Karthik (9444XXXXXX)' }
+]);
+function renderCarpool() {
+  $('carpool-list').innerHTML = carpoolList.map(c => `
+    <div class="p-3 bg-slate-50 rounded-2xl border text-xs flex justify-between items-center">
+      <div><p class="font-bold text-slate-900">${c.from} ➔ ${c.to}</p><p class="text-slate-500">🕒 ${c.time} | 🚗 ${c.mode} (${c.seats} seats open)</p></div>
+      <span class="font-semibold text-blue-600">${c.contact}</span>
+    </div>
+  `).join('');
+}
+function openAddPoolModal() {
+  const from = prompt('Starting point (e.g. Vadapalani):'); if (!from) return;
+  carpoolList.push({ from, to: 'SRM Ramapuram', time: '08:30 AM', mode: 'Auto Share', seats: 2, contact: 'You' });
+  save('carpools', carpoolList); renderCarpool(); toast('Ride offer published');
+}
+
+// Hostel Portal & Mess
+let isHostelLoggedIn = load('hostel_login', false);
+let messStatus = load('mess_status', { breakfast: true, lunch: true, snacks: true, dinner: true });
+let messRatings = load('mess_ratings', { breakfast: 4.5, lunch: 4.0, snacks: 4.2, dinner: 3.8 });
+let mealsSavedCount = load('meals_saved', 0);
+
+function renderMessMind() {
+  const meals = [
+    { id: 'breakfast', name: 'Breakfast 🍳', time: '07:30 - 09:00' },
+    { id: 'lunch', name: 'Lunch 🍲', time: '12:15 - 01:45' },
+    { id: 'snacks', name: 'Snacks ☕', time: '04:30 - 05:30' },
+    { id: 'dinner', name: 'Dinner 🍛', time: '07:30 - 09:00' }
+  ];
+  $('mess-meal-grid').innerHTML = meals.map(m => `
+    <div class="bg-white/10 backdrop-blur-sm p-3.5 rounded-2xl border border-white/10 space-y-2">
+      <div><p class="font-bold text-xs text-white">${m.name}</p><p class="text-[10px] text-teal-100">${m.time} | Rating: ⭐ ${messRatings[m.id]}</p></div>
+      <div class="flex gap-2">
+        <button onclick="toggleMessMeal('${m.id}')" class="rmp-btn flex-1 py-1 rounded-xl text-[11px] font-semibold ${messStatus[m.id] ? 'bg-white text-teal-800' : 'bg-rose-500 text-white'}">${messStatus[m.id] ? '✓ Eating' : '✕ Skipping'}</button>
+        <button onclick="rateMess('${m.id}')" class="rmp-btn bg-black/20 text-white px-2.5 rounded-xl text-[11px]">⭐ Rate</button>
+      </div>
+    </div>
+  `).join('');
+  $('mess-savings').textContent = `🌱 Meals Saved: ${mealsSavedCount}`;
+}
+function toggleMessMeal(id) {
+  messStatus[id] = !messStatus[id];
+  if (!messStatus[id]) mealsSavedCount++; else mealsSavedCount = Math.max(0, mealsSavedCount - 1);
+  save('mess_status', messStatus); save('meals_saved', mealsSavedCount); renderMessMind(); toast('Mess attendance updated');
+}
+function rateMess(id) {
+  const r = prompt('Rate today’s meal out of 5:'); if (!r) return;
+  messRatings[id] = Number(r); save('mess_ratings', messRatings); renderMessMind(); toast('Thank you for rating!');
+}
+function checkHostelAuth() {
+  $('hostel-login-box').classList.toggle('hidden', isHostelLoggedIn);
+  $('hostel-dashboard').classList.toggle('hidden', !isHostelLoggedIn);
+  if (isHostelLoggedIn) renderMessMind();
+}
+function loginHostel() {
+  if ($('hostel-id').value === 'HST101' && $('hostel-pass').value === 'hostel123') {
+    isHostelLoggedIn = true; save('hostel_login', true); checkHostelAuth(); toast('Logged into Hostel Portal');
+  } else toast('Invalid credentials');
+}
+function logoutHostel() { isHostelLoggedIn = false; save('hostel_login', false); checkHostelAuth(); }
+function requestOutpass() {
+  const r = $('outpass-reason').value.trim(); if (!r) { toast('Enter reason'); return; }
+  $('outpass-status').textContent = 'Approved (Gate Pass Active)';
+  makeQR($('qrcode-outpass'), 'CAMPUS_NEX_OUTPASS_HST101_' + Date.now(), 120);
+  toast('Gate pass QR generated');
+}
+let maintPhoto = null;
+function pickMaintenancePhoto() {
+  const i = document.createElement('input'); i.type = 'file'; i.accept = 'image/*';
+  i.onchange = () => { const fr = new FileReader(); fr.onload = () => { maintPhoto = fr.result; $('maint-photo-status').textContent = '✓ Photo attached'; }; fr.readAsDataURL(i.files[0]); };
+  i.click();
+}
+function submitMaintenance() {
+  const val = $('maintenance-issue').value.trim(); if (!val) return;
+  const li = document.createElement('li'); li.textContent = `• ${val} [Pending - Assigned to Electrician]`;
+  $('ticket-list').appendChild(li); $('maintenance-issue').value = ''; maintPhoto = null; $('maint-photo-status').textContent = '';
+  toast('Maintenance ticket logged');
+}
+function bookLaundry() {
+  $('laundry-text').textContent = 'Block A, Machine #2 (Booked)';
+  $('laundry-btn').disabled = true; toast('Laundry booked');
+}
+
+// Academics & Occupancy
+const scheduleDatabase = {
+  "CSE Core": {
+    "Section A": [
+      { time: "08:30 AM", sub: "Data Structures & Algos", room: "Tech Block LH-101" },
+      { time: "10:15 AM", sub: "Computer Networks", room: "Tech Block LH-102" },
+      { time: "01:00 PM", sub: "Discrete Mathematics", room: "Main Block 204" }
+    ],
+    "Section C": [
+      { time: "08:30 AM", sub: "Operating Systems", room: "LH 201" },
+      { time: "10:15 AM", sub: "Theory of Computation", room: "LH 202" },
+      { time: "01:00 PM", sub: "Web Development Lab", room: "Lab 1" }
+    ]
+  }
+};
+function loadTimetable() {
+  const dept = $('select-dept').value, sec = $('select-section').value;
+  const items = scheduleDatabase[dept]?.[sec] || [{ time: "09:00 AM", sub: "Core Engineering Class", room: "Tech Block LH-201" }];
+  $('timetable-result').innerHTML = `
+    <div class="p-4 bg-slate-50 rounded-2xl border text-xs space-y-3">
+      <p class="font-bold text-slate-800 text-sm">${dept} — ${sec} Schedule</p>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        ${items.map(i => `<div class="bg-white p-3 rounded-xl border shadow-xs"><span class="text-orange-600 font-bold">${i.time}</span><p class="font-bold text-slate-900 mt-1">${i.sub}</p><p class="text-[10px] text-slate-500">📍 ${i.room}</p></div>`).join('')}
+      </div>
+    </div>
+  `;
+}
+function syncCalendarICS() {
+  const ics = "BEGIN:VCALENDAR\nVERSION:2.0\nSUMMARY:Data Structures Exam\nDTSTART:20261110T090000Z\nEND:VCALENDAR";
+  const blob = new Blob([ics], { type: 'text/calendar' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'campus_nex_schedule.ics'; a.click();
+  toast('📅 .ics Calendar synced & downloaded');
+}
+
+let seatOccupancy = load('seat_occ', [
+  { name: 'Central Library (Quiet Zone)', status: 'Moderate', seats: '42 open tables' },
+  { name: 'Tech Block Computer Lab 1', status: 'Busy', seats: '12 workstations left' },
+  { name: 'Reading Hall 2', status: 'Quiet', seats: '85 open tables' }
+]);
+function renderOccupancy() {
+  $('occupancy-grid').innerHTML = seatOccupancy.map(s => `
+    <div class="p-4 rounded-2xl border bg-slate-50 space-y-1">
+      <div class="flex justify-between"><p class="font-bold text-slate-900 text-xs">${s.name}</p><span class="text-[10px] px-2 py-0.5 rounded-full font-bold ${s.status === 'Quiet' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">${s.status}</span></div>
+      <p class="text-xs text-slate-600 mt-1">Status: <strong>${s.seats}</strong></p>
+    </div>
+  `).join('');
+}
+function reportSeatStatus() {
+  const loc = prompt('Enter library/lab name:'); if (!loc) return;
+  seatOccupancy.unshift({ name: loc, status: 'Moderate', seats: 'Crowd updated recently' });
+  save('seat_occ', seatOccupancy); renderOccupancy(); toast('Seat occupancy reported');
+}
+
+// Peer Collaboration & Collab
+function findStudyMatch() {
+  const topic = $('match-topic').value;
+  $('match-results').innerHTML = `
+    <div class="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl text-xs space-y-1">
+      <p class="font-bold text-emerald-950">🎉 Found 3 Classmates for ${topic}!</p>
+      <p class="text-emerald-800">• Rahul M. (Section C) • Priya S. (Section A) • Karthik R. (Section B)</p>
+      <button onclick="toast('Study session invite sent!')" class="mt-2 rmp-btn bg-emerald-600 text-white px-3 py-1.5 rounded-xl font-semibold">Send Group Invite</button>
+    </div>
+  `;
+}
+
+let whispers = load('whispers', [
+  { text: 'Does anyone have PYQs for Operating Systems CAT-2?', author: 'Anonymous Senior', votes: 14 }
+]);
+function renderWhispers() {
+  $('whisper-list').innerHTML = whispers.map((w, i) => `
+    <div class="p-3 bg-white rounded-xl border flex justify-between items-center shadow-xs">
+      <div><p class="font-semibold text-slate-900">${esc(w.text)}</p><p class="text-[10px] text-slate-400">By ${w.author}</p></div>
+      <button onclick="upvoteWhisper(${i})" class="rmp-btn bg-orange-50 text-orange-700 px-2.5 py-1 rounded-lg text-xs font-bold">▲ ${w.votes}</button>
+    </div>
+  `).join('');
+}
+function postWhisper() {
+  const txt = $('whisper-input').value.trim(); if (!txt) return;
+  whispers.unshift({ text: txt, author: 'Anonymous Student', votes: 1 });
+  save('whispers', whispers); renderWhispers(); $('whisper-input').value = ''; toast('Whisper posted anonymously');
+}
+function upvoteWhisper(i) { whispers[i].votes++; save('whispers', whispers); renderWhispers(); }
+
+let cloudNotes = load('cloud_notes', [
+  { code: 'U19CS301', title: 'Data Structures Complete Handwritten Notes', uploader: 'Asif (CSE Core)', tags: 'Notes, DS, Sem 3' },
+  { code: 'U19CS302', title: 'Computer Networks Previous Year Question Bank', uploader: 'Senior Batch', tags: 'PYQ, Networks' }
+]);
+function renderNotesRepo() {
+  $('notes-repo-grid').innerHTML = cloudNotes.map(n => `
+    <div class="p-4 rounded-2xl border bg-slate-50 space-y-2">
+      <span class="text-[10px] font-bold bg-orange-100 text-orange-800 px-2 py-0.5 rounded-md">${n.code}</span>
+      <h4 class="font-bold text-slate-900 text-xs">${n.name || n.title}</h4>
+      <p class="text-[11px] text-slate-500">By ${n.uploader} | Tags: ${n.tags}</p>
+      <button onclick="toast('Downloading cloud document...')" class="rmp-btn w-full bg-slate-900 text-white py-1.5 rounded-xl text-xs font-semibold">Download PDF</button>
+    </div>
+  `).join('');
+}
+function openUploadNotesModal() {
+  const t = prompt('Document Title (e.g. OS Lab Manual):'); if (!t) return;
+  cloudNotes.unshift({ code: 'U19CS399', title: t, uploader: 'You', tags: 'Manual, Lab' });
+  save('cloud_notes', cloudNotes); renderNotesRepo(); toast('Notes uploaded to cloud repo');
+}
+
+// Campus Life & Radar
+let lostItems = load('lost_items', [
+  { item: 'Scientific Calculator (Casio)', loc: 'Tech Block LH-101', status: 'Lost' },
+  { item: 'AirPods Charging Case', loc: 'Main Canteen', status: 'Found at Security' }
+]);
+function renderLostItems() {
+  $('lost-items-list').innerHTML = lostItems.map(l => `
+    <div class="p-3 bg-slate-50 rounded-2xl border text-xs flex justify-between items-center">
+      <div><p class="font-bold text-slate-900">${l.item}</p><p class="text-slate-500">📍 ${l.loc}</p></div>
+      <span class="font-bold px-2 py-1 rounded-lg ${l.status.includes('Found') ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}">${l.status}</span>
+    </div>
+  `).join('');
+}
+function openLostModal() {
+  const item = prompt('Item name (e.g. ID card / Hoodie):'); if (!item) return;
+  lostItems.unshift({ item, loc: 'Campus Grounds', status: 'Lost' });
+  save('lost_items', lostItems); renderLostItems(); toast('Lost item reported');
+}
+
+const campusEvents = [
+  { name: 'Hack Devengers 2.0 (24h Hackathon)', date: 'Oct 28', venue: 'Tech Block Auditorium', rsvp: true },
+  { name: 'A.R. Rahman Symphony Night (Cultural)', date: 'Nov 02', venue: 'Main Ground', rsvp: false },
+  { name: 'AI & Robotics Tech Symposium', date: 'Nov 10', venue: 'Seminar Hall 2', rsvp: false }
+];
+function renderEvents() {
+  $('events-feed').innerHTML = campusEvents.map((ev, i) => `
+    <div class="p-3 bg-slate-50 rounded-2xl border text-xs flex justify-between items-center">
+      <div><p class="font-bold text-slate-900">${ev.name}</p><p class="text-slate-500">📅 ${ev.date} | 📍 ${ev.venue}</p></div>
+      <button onclick="toggleRsvp(${i})" class="rmp-btn px-3 py-1.5 rounded-xl text-xs font-bold ${ev.rsvp ? 'bg-emerald-600 text-white' : 'bg-slate-900 text-white'}">${ev.rsvp ? '✓ RSVPed' : 'RSVP'}</button>
+    </div>
+  `).join('');
+}
+function toggleRsvp(i) { campusEvents[i].rsvp = !campusEvents[i].rsvp; renderEvents(); toast('RSVP status updated'); }
+
+function showMapBlock(block) {
+  const guides = {
+    'Tech Block': 'Tech Block houses LH-101 to LH-304 on floors 1-3. Computer Labs 1 to 4 are on the 2nd floor.',
+    'Main Admin': 'Main Admin building contains the COE Examination Cell, Fee payment counters, and Principal office.',
+    'Central Library': 'Central Library has 3 reading halls, digital terminals on ground floor, and section for textbooks.',
+    'Auditorium': 'Dr. T.P. Gaud Auditorium is located near Gate 2 for university symposia and cultural fests.'
+  };
+  $('map-detail-box').textContent = guides[block] || 'Select a block.';
+}
+
+// Career & Gamified
+let hackProjects = load('hacks', [
+  { title: 'SRM RMP Hub (Transit App)', tech: 'Node.js, Express, Tailwind', looking: 'Frontend Dev' },
+  { title: 'AI Campus Voice Assistant', tech: 'Python, SpeechRecognition', looking: 'UI/UX Designer' }
+]);
+function renderHackGrid() {
+  $('hackathon-grid').innerHTML = hackProjects.map(h => `
+    <div class="p-4 rounded-2xl border bg-slate-50 space-y-2">
+      <h4 class="font-bold text-slate-900 text-xs">${h.title}</h4>
+      <p class="text-[11px] text-slate-600">Tech: ${h.tech}</p>
+      <span class="text-[10px] bg-orange-100 text-orange-800 px-2 py-0.5 rounded-md font-semibold">Looking for: ${h.looking}</span>
+      <button onclick="toast('Connection request sent!')" class="rmp-btn w-full bg-slate-900 text-white py-1.5 rounded-xl text-xs font-semibold">Join Team</button>
+    </div>
+  `).join('');
+}
+function openHackModal() {
+  const t = prompt('Project title:'); if (!t) return;
+  hackProjects.unshift({ title: t, tech: 'React, Node.js', looking: 'Fullstack Dev' });
+  save('hacks', hackProjects); renderHackGrid(); toast('Project published');
+}
+
+const internships = [
+  { company: 'Google Software Engineering Intern', role: 'Remote / Bangalore', stipend: '₹80k/mo' },
+  { company: 'Zoho Corporation Member Technical Staff', role: 'Chennai', stipend: '₹35k/mo' },
+  { company: 'Amazon SDE Intern', role: 'Chennai / Hyderabad', stipend: '₹60k/mo' }
+];
+function renderInternships() {
+  $('internship-board').innerHTML = internships.map(i => `
+    <div class="p-3 bg-slate-50 rounded-2xl border text-xs flex justify-between items-center">
+      <div><p class="font-bold text-slate-900">${i.company}</p><p class="text-slate-500">📍 ${i.role} | 💰 ${i.stipend}</p></div>
+      <button onclick="toast('Applied successfully via referral')" class="rmp-btn bg-orange-600 text-white px-3 py-1.5 rounded-xl font-semibold">Apply</button>
+    </div>
+  `).join('');
+}
+
+let pomoSec = 1500, pomoActive = false, pomoTimerId = null;
+function startPomodoro() {
+  if (pomoActive) return; pomoActive = true;
+  pomoTimerId = setInterval(() => {
+    if (pomoSec > 0) { pomoSec--; let m = Math.floor(pomoSec/60), s = pomoSec%60; $('pomo-timer').textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`; }
+    else { clearInterval(pomoTimerId); pomoActive = false; alert('Pomodoro session completed! Streak updated.'); }
+  }, 1000);
+  toast('Pomodoro timer started');
+}
+function resetPomodoro() { clearInterval(pomoTimerId); pomoActive = false; pomoSec = 1500; $('pomo-timer').textContent = '25:00'; }
+
+// Voice / PDF / Finance
+function generatePDF(type) {
+  const code = $('pdf-code-input').value.trim(); if (!code) { toast('Paste text first'); return; }
+  const { jsPDF } = window.jspdf; const doc = new jsPDF();
+  doc.setFontSize(16); doc.text(type === 'assignment' ? 'CAMPUS NEX Assignment Formatter' : 'CAMPUS NEX Professional Resume', 14, 20);
+  doc.setFontSize(10); doc.text(doc.splitTextToSize(code, 180), 14, 30);
+  doc.save(`${type}_export.pdf`); toast('PDF downloaded');
+}
+
+// UI polish: after switching tabs, scroll up and keep the active tab centred in the bar
+(function () {
+  const orig = switchTab;
+  switchTab = function (id) {
+    orig(id);
+    if (id === 'canteen') { window.__stag = true; renderCanteen(); }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    const b = document.getElementById('tab-' + id);
+    if (b && b.scrollIntoView) b.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
+  };
+})();
+
+// Animations: button ripple + sections fading up while scrolling
+document.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('.rmp-btn');
+  if (!b || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const r = b.getBoundingClientRect(), d = Math.max(r.width, r.height);
+  const wave = document.createElement('span'); wave.className = 'rmp-ripple';
+  wave.style.cssText = `width:${d}px;height:${d}px;left:${e.clientX - r.left - d / 2}px;top:${e.clientY - r.top - d / 2}px`;
+  const keep = { p: b.style.position, o: b.style.overflow };
+  if (getComputedStyle(b).position === 'static') b.style.position = 'relative';
+  b.style.overflow = 'hidden'; b.appendChild(wave);
+  setTimeout(() => { wave.remove(); b.style.position = keep.p; b.style.overflow = keep.o; }, 600);
+});
+(function () {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches || !('IntersectionObserver' in window)) return;
+  const io = new IntersectionObserver(list => list.forEach(en => {
+    if (!en.isIntersecting) return;
+    en.target.classList.add('rv-in'); io.unobserve(en.target);
+    setTimeout(() => en.target.classList.remove('rv', 'rv-in'), 800);
+  }), { threshold: 0.06 });
+  const watch = () => document.querySelectorAll('main section > .bg-white:not(.rmp-card), main section > div > .bg-white:not(.rmp-card)').forEach(el => {
+    if (el.dataset.rv) return; el.dataset.rv = '1'; el.classList.add('rv'); io.observe(el);
+  });
+  let queued = false;
+  new MutationObserver(() => { if (queued) return; queued = true; requestAnimationFrame(() => { queued = false; watch(); }); })
+    .observe(document.querySelector('main'), { childList: true, subtree: true });
+  watch();
+})();
+
+// ===== AI Voice Assistant (mic + "Hey Nex" hands-free + voice commands + many languages) =====
+const VA = { rec: null, listening: false, handsFree: false, busy: false, speaking: false, fatal: false, awake: false, spk: 0 };
+const VA_SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+// Browsers often hear "nex" as "next", "necks", "nexus"...
+const WAKE_RE = /\b(?:hey|hay|hi|hello|okay|ok|a)[\s,.\-]*(?:nex|next|necks|nexus|nax|nix|nets|neck)\b[\s,.!?:\-]*/i;
+const VA_YES = { 'ta-IN': 'சொல்லுங்கள்', 'hi-IN': 'जी, बोलिए', 'te-IN': 'చెప్పండి', 'ml-IN': 'പറയൂ', 'kn-IN': 'ಹೇಳಿ', 'bn-IN': 'বলুন',
+  'es-ES': '¿Sí?', 'fr-FR': 'Oui ?', 'de-DE': 'Ja?', 'ja-JP': 'はい', 'zh-CN': '请说', 'ar-SA': 'نعم' };
+// Pace: how long it waits after you stop talking, and how fast it speaks back
+const VA_PACE = {
+  relaxed: { sil: 1900, fire: 900, wake: 1300, rate: 0.88, gap: 350 },
+  normal:  { sil: 1400, fire: 650, wake: 950,  rate: 0.95, gap: 250 },
+  quick:   { sil: 900,  fire: 350, wake: 600,  rate: 1.05, gap: 120 },
+};
+const vaPace = () => VA_PACE[$('va-pace').value] || VA_PACE.normal;
+const vaLang = () => $('va-lang').value;
+const vaIsEnglish = () => vaLang().startsWith('en');
+
+function vaStatus(t) {
+  $('va-status').textContent = t;
+  const f = $('va-fab-status'); f.textContent = t; f.classList.remove('hidden');
+  clearTimeout(vaStatus.t);
+  vaStatus.t = setTimeout(() => { if (!VA.listening && !VA.busy && !VA.speaking) f.classList.add('hidden'); }, 4000);
+}
+function vaUI() {
+  ['va-mic', 'va-fab-mic'].forEach(id => {
+    const mic = $(id);
+    mic.textContent = VA.listening ? '⏹️' : '🎤';
+    mic.classList.toggle('rmp-pulse-glow', VA.listening);
+  });
+  [['va-hf', 'px-4 py-2.5 rounded-xl text-xs'], ['va-fab-hf', 'px-3 py-2 rounded-full text-[11px] shadow-lg']].forEach(([id, sz]) => {
+    $(id).textContent = '🎧 Hands-free: ' + (VA.handsFree ? 'ON' : 'OFF');
+    $(id).className = 'rmp-btn font-bold text-white ' + sz + ' ' + (VA.handsFree ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-slate-900 hover:bg-slate-800');
+  });
+}
+function vaLog(role, text) {
+  const box = $('va-log');
+  if (!box.dataset.started) { box.innerHTML = ''; box.dataset.started = '1'; }
+  const me = role === 'user';
+  box.insertAdjacentHTML('beforeend', `<div class="flex ${me ? 'justify-end' : 'justify-start'}"><p class="max-w-[85%] px-3 py-2 rounded-2xl ${me ? 'bg-orange-600 text-white' : 'bg-white border text-slate-800'}">${esc(text)}</p></div>`);
+  box.scrollTop = box.scrollHeight;
+}
+
+// ---- English page commands handled instantly in the browser (other languages go through the AI) ----
+const VA_PAGES = [
+  ['home', 'Home', ['home', 'dashboard', 'main page']],
+  ['canteen', 'Canteen', ['canteen', 'food', 'menu', 'break bite']],
+  ['bus', 'Mobility', ['bus', 'buses', 'mobility', 'commute', 'bus radar', 'transport']],
+  ['hostel', 'Hostel', ['hostel', 'mess', 'outpass', 'laundry', 'maintenance']],
+  ['academic', 'Academics', ['schedule', 'timetable', 'time table', 'academics', 'academic', 'classes', 'class', 'attendance', 'gpa', 'seat', 'seats']],
+  ['collab', 'Collab', ['peer collab', 'collab', 'collaboration', 'peer', 'study group', 'teammates']],
+  ['life', 'Campus Life', ['campus life', 'lost and found', 'life']],
+  ['career', 'Career', ['career', 'jobs', 'internship', 'internships', 'placement', 'placements']],
+  ['study', 'AI Voice', ['ai voice', 'voice', 'assistant', 'study', 'citation', 'pdf']],
+  ['finance', 'Finance', ['finance', 'ledger', 'payments', 'payment', 'expenses', 'money', 'backup', 'paytrack']],
+  ['tools', 'Tools', ['tools', 'tool']],
+  ['submit', 'Problem Box', ['problem box', 'prob box', 'problem', 'suggestion', 'suggestions', 'idea', 'ideas', 'feedback']],
+];
+const VA_TAB_IDS = VA_PAGES.map(p => p[0]);
+function vaMatch(text) {
+  const t = text.toLowerCase().replace(/[.,!?]/g, ' ').replace(/\s+/g, ' ').trim();
+  const m = t.match(/^(?:please\s+)?(?:open|go to|goto|go|show me|show|take me to|switch to|navigate to|launch|start)\s+(?:the\s+|my\s+)?(.+?)(?:\s+(?:page|tab|section|screen))?$/);
+  if (!m) return null;
+  return VA_PAGES.find(([id, name, words]) => words.some(w => new RegExp('\\b' + w + '\\b').test(m[1]))) || null;
+}
+function vaCommand(text) {
+  const p = vaMatch(text);
+  if (!p) return '';
+  switchTab(p[0]); return 'Opening ' + p[1];
+}
+
+// ---- Listening ----
+function vaStart() {
+  if (!VA_SR) { toast('Voice input needs Chrome, Edge or Safari'); VA.handsFree = false; vaUI(); return; }
+  if (VA.listening || VA.busy || VA.speaking) return;
+  const pace = vaPace();
+  const wakeMode = VA.handsFree && !VA.awake;      // hands-free sleeps until it hears "Hey Nex"
+  const rec = new VA_SR();
+  // "Hey Nex" is English, so the sleeping state always listens in English; your command is heard in the chosen language
+  rec.lang = wakeMode ? 'en-IN' : vaLang();
+  rec.interimResults = true; rec.continuous = wakeMode;
+  let finalText = '', interim = '', woke = false, rest = '', fireT, silT, ended = false;
+  const fireWake = r => { woke = true; rest = vaIsEnglish() ? r : ''; try { rec.abort(); } catch {} };
+  rec.onstart = () => { VA.listening = true; vaUI(); vaStatus(wakeMode ? '😴 Say “Hey Nex”…' : '🎤 Listening…'); };
+  rec.onresult = e => {
+    clearTimeout(fireT); clearTimeout(silT);
+    if (wakeMode) {
+      for (let i = e.resultIndex; i < e.results.length && !woke; i++) {
+        const heard = e.results[i][0].transcript, m = heard.match(WAKE_RE);
+        if (!m) continue;
+        const r = heard.slice(m.index + m[0].length).trim();
+        if (e.results[i].isFinal) fireWake(r);
+        else if (!r) fireT = setTimeout(() => fireWake(''), pace.wake);                 // just "Hey Nex"
+        else if (vaIsEnglish() && vaMatch(r)) fireT = setTimeout(() => fireWake(r), pace.fire);   // "Hey Nex open schedule"
+      }
+      return;
+    }
+    interim = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const t = e.results[i][0].transcript;
+      if (e.results[i].isFinal) finalText += t; else interim += t;
+    }
+    const said = (finalText + interim).trim();
+    vaStatus('🎤 ' + said);
+    const clean = said.replace(new RegExp('^' + WAKE_RE.source, 'i'), '');
+    if (vaIsEnglish() && vaMatch(clean)) fireT = setTimeout(() => { finalText = said; interim = ''; try { rec.abort(); } catch {} }, pace.fire);
+    else silT = setTimeout(() => { try { rec.stop(); } catch {} }, pace.sil);
+  };
+  rec.onerror = e => {
+    if (['not-allowed', 'service-not-allowed', 'audio-capture', 'network'].includes(e.error)) {
+      VA.fatal = true; VA.handsFree = false;
+      toast(e.error === 'not-allowed' || e.error === 'service-not-allowed' ? 'Allow microphone access in your browser' : e.error === 'network' ? 'Speech service needs internet' : 'Mic problem: ' + e.error);
+    } else if (e.error === 'language-not-supported') {
+      VA.fatal = true; VA.handsFree = false; toast('Your browser can\'t listen in this language - try Chrome');
+    }
+  };
+  rec.onend = () => {
+    if (ended) return; ended = true;
+    clearTimeout(fireT); clearTimeout(silT);
+    if (VA.rec === rec) VA.rec = null;
+    VA.listening = false; vaUI();
+    if (VA.fatal) { VA.fatal = false; vaStatus('Tap the mic to try again'); return; }
+    if (woke) {
+      if (rest) { VA.awake = false; vaHandle(rest); }
+      else { VA.awake = true; vaSpeak(VA_YES[vaLang()] || 'Yes?'); }
+      return;
+    }
+    if (wakeMode) { if (VA.handsFree) setTimeout(vaStart, pace.gap); return; }
+    const t = (finalText || interim).trim();
+    VA.awake = false;
+    if (t) vaHandle(t);
+    else if (VA.handsFree) setTimeout(vaStart, pace.gap);
+    else vaStatus('Didn\'t catch that - tap the mic and try again');
+  };
+  VA.rec = rec;
+  try { rec.start(); } catch (e) { VA.rec = null; VA.listening = false; }
+}
+function vaMicClick() {
+  if (VA.speaking) { VA.spk++; speechSynthesis.cancel(); VA.speaking = false; vaStatus('Tap the mic to talk'); return; }
+  VA.awake = true;                                 // a tap means "I'm talking to you now" (no wake word needed)
+  if (VA.listening && VA.rec) {
+    // sleeping in hands-free? switch to command listening. Already capturing? finish now.
+    const rec = VA.rec;
+    try { VA.handsFree && rec.continuous ? rec.abort() : rec.stop(); } catch {}
+    return;
+  }
+  vaStart();
+}
+function vaToggleHandsFree() {
+  VA.handsFree = !VA.handsFree; VA.awake = false;
+  vaUI();
+  if (VA.handsFree) {
+    toast('Hands-free on - say "Hey Nex" then your command');
+    if (VA.rec) { try { VA.rec.abort(); } catch {} } else vaStart();
+  } else {
+    if (VA.rec) { try { VA.rec.abort(); } catch {} }
+    VA.spk++; if (window.speechSynthesis) speechSynthesis.cancel();
+    VA.speaking = false; vaStatus('Hands-free off');
+  }
+}
+function vaLangChange() {
+  save('va-lang', vaLang());
+  VA.awake = false; VA.spk++;
+  if (window.speechSynthesis) speechSynthesis.cancel();
+  VA.speaking = false;
+  if (VA.rec) { try { VA.rec.abort(); } catch {} }     // hands-free restarts itself in the new language
+  vaStatus('Language: ' + $('va-lang').selectedOptions[0].textContent);
+}
+
+// ---- Handling what was said ----
+function vaHandle(text) {
+  text = text.replace(new RegExp('^' + WAKE_RE.source, 'i'), '').trim();
+  if (!text) { if (VA.handsFree) vaStart(); return; }
+  vaLog('user', text);
+  if (VA.handsFree && /^\s*(stop|exit|goodbye|bye|go to sleep|sleep)\s*[.!]?\s*$/i.test(text)) {
+    vaToggleHandsFree(); vaLog('ai', 'Okay, hands-free is off.'); return;
+  }
+  const cmd = vaCommand(text);
+  if (cmd) { vaLog('ai', cmd); vaSpeak(cmd); return; }
+  vaAsk(text);
+}
+async function vaAsk(text) {
+  VA.busy = true; vaStatus('🤔 Thinking…');
+  let reply = '', tab = null;
+  try {
+    const ctl = new AbortController(), to = setTimeout(() => ctl.abort(), 20000);
+    const r = await fetch('/api/voice-chat', { method: 'POST', signal: ctl.signal, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text, lang: vaLang() }) });
+    clearTimeout(to);
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok || d.error) throw new Error(d.error || 'Server error ' + r.status);
+    reply = d.reply || ''; tab = VA_TAB_IDS.includes(d.tab) ? d.tab : null;
+  } catch (e) {
+    VA.busy = false; VA.handsFree = false; vaUI();
+    vaLog('ai', '⚠️ ' + (e.name === 'AbortError' ? 'The AI took too long - please try again' : e.message));
+    vaStatus('Open the app at http://localhost:3000 with node server.js running');
+    return;
+  }
+  VA.busy = false;
+  if (tab) switchTab(tab);                         // the AI understood "open ..." in any language
+  if (!reply) { if (VA.handsFree) vaStart(); return; }
+  vaLog('ai', reply);
+  if ($('section-study').classList.contains('hidden') && !tab) toast('🤖 ' + reply);
+  vaSpeak(reply);
+}
+function vaSpeak(text) {
+  const pace = vaPace();
+  if (!window.speechSynthesis) { if (VA.handsFree) setTimeout(vaStart, pace.gap); return; }
+  speechSynthesis.cancel();
+  const id = ++VA.spk, lang = vaLang(), u = new SpeechSynthesisUtterance(text);
+  u.lang = lang; u.rate = pace.rate;
+  const voices = speechSynthesis.getVoices();
+  const v = voices.find(x => x.lang.replace('_', '-').toLowerCase() === lang.toLowerCase()) || voices.find(x => x.lang.toLowerCase().startsWith(lang.slice(0, 2)));
+  if (v) u.voice = v;
+  else if (!vaIsEnglish()) toast('No ' + $('va-lang').selectedOptions[0].textContent + ' voice on this device, so the reply is text only');
+  const done = () => {
+    if (id !== VA.spk) return;                    // an older utterance finishing late must not restart the mic
+    VA.speaking = false;
+    vaStatus(VA.handsFree ? (VA.awake ? '🎤 Listening…' : '😴 Say “Hey Nex”…') : 'Tap the mic to talk');
+    if (VA.handsFree) setTimeout(vaStart, pace.gap);
+  };
+  u.onend = done; u.onerror = done;
+  VA.speaking = true; vaStatus('🔊 Speaking… (tap the mic to interrupt)');
+  speechSynthesis.speak(u);
+}
+if (window.speechSynthesis) { speechSynthesis.getVoices(); speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices(); }
+(function vaInit() {
+  const l = load('va-lang', 'en-IN'), p = load('va-pace', 'normal');
+  if ([...$('va-lang').options].some(o => o.value === l)) $('va-lang').value = l;
+  $('va-pace').value = p;
+  $('va-pace').addEventListener('change', () => save('va-pace', $('va-pace').value));
+})();
+
+let chatData = load('chats', [{ text: 'Anyone attending the hackathon tomorrow?', sec: 'Section C', course: 'CSE Core', year: '1st Year', time: '10:15 AM' }]);
+function filterChat() {
+  const yr = $('chat-year').value, crs = $('chat-course').value, sec =$('chat-sec').value;
+  $('chat-filter-badge').textContent = `${yr} | ${crs} | ${sec}`;
+  $('chat-messages').innerHTML = chatData.filter(c => c.year === yr && c.course === crs && c.sec === sec).map(m => `
+    <div class="bg-white p-2.5 rounded-xl border space-y-1"><p class="text-slate-800">${esc(m.text)}</p><span class="text-[9px] text-slate-400 block text-right">${m.time}</span></div>
+  `).join('');
+}
+function sendChatMessage() {
+  const txt = $('chat-input').value.trim(); if (!txt) return;
+  chatData.push({ text: txt, year: $('chat-year').value, course: $('chat-course').value, sec:$('chat-sec').value, time: new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) });
+  save('chats', chatData); $('chat-input').value = ''; filterChat();
+}
+
+let ledger = load('ledger', [{ cat: 'Tuition', desc: 'Semester Fee', amt: 45000, method: 'Net Banking', date: '2026-09-10', receipt: null }]);
+function renderLedger() {
+  let tot = 0;
+  $('ledger-tbody').innerHTML = ledger.map((item, idx) => {
+    tot += Number(item.amt);
+    return `<tr class="hover:bg-slate-50"><td class="p-3 font-semibold">${esc(item.cat)}</td><td class="p-3">${esc(item.desc||'—')}</td><td class="p-3">${item.date}</td><td class="p-3">${item.method}</td><td class="p-3 font-bold">${inr(item.amt)}</td><td class="p-3">None</td><td class="p-3"><button onclick="deleteExpense(${idx})" class="text-rose-500 font-bold">✕</button></td></tr>`;
+  }).join('');
+  $('ledger-total').textContent = inr(tot);$('receipt-count').textContent = ledger.filter(i => i.receipt).length;
+}
+function toggleExpenseForm() { $('expense-form').classList.toggle('hidden'); }
+function addExpense(e) {
+  e.preventDefault();
+  addExpenseDirect($('exp-cat').value, $('exp-desc').value, $('exp-amt').value, $('exp-method').value);$('expense-form').reset(); toggleExpenseForm();
+}
+function addExpenseDirect(cat, desc, amt, method) {
+  ledger.push({ cat, desc, amt, method, date: new Date().toISOString().split('T')[0], receipt: null });
+  save('ledger', ledger); renderLedger(); toast('Expense recorded');
+}
+function deleteExpense(idx) { ledger.splice(idx, 1); save('ledger', ledger); renderLedger(); }
+
+function exportDataJSON() {
+  const data = { student, ledger, todos, exams, courses, subjAtt };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'campus_nex_backup.json'; a.click();
+  toast('Data exported successfully');
+}
+function importDataJSONPrompt() {
+  const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.json';
+  inp.onchange = () => {
+    const fr = new FileReader();
+    fr.onload = () => {
+      try {
+        const d = JSON.parse(fr.result);
+        if (d.student) { student = d.student; save('student', student); }
+        if (d.ledger) { ledger = d.ledger; save('ledger', ledger); }
+        renderLedger(); renderHome(); toast('Data imported successfully');
+      } catch { toast('Invalid JSON file'); }
+    };
+    fr.readAsDataURL(inp.files[0]);
+  };
+  inp.click();
+}
+
+// Student Tools & Target Calculator
+function calcTargetExamScore() {
+  const internals = Number($('calc-internals').value);
+  const target = $('calc-target').value;
+  const needed = target.includes('O') ? 85 : target.includes('A+') ? 75 : 65;
+  const examScore = Math.max(0, needed - internals);
+  $('target-out').textContent = `To secure ${target}, you need a minimum of ${examScore} out of 50 in your final semester exams.`;
+}
+
+function calcAttendance() {
+  const a = Number($('att-a').value), h = Number($('att-h').value), t = Number($('att-t').value);
+  if (!h || a > h) { $('att-out').textContent = 'Enter valid numbers.'; return; }
+  const pct = ((a/h)*100).toFixed(1);
+  if (pct >= t) $('att-out').textContent = `Current: ${pct}%. Safe zone!`;
+  else $('att-out').textContent = `Current: ${pct}%. Warning! Need to attend classes consistently.`;
+}
+
+let courses = load('courses', [{ name: 'Data Structures', pts: 9, cr: 4 }]);
+function renderGPA() {
+  $('course-rows').innerHTML = courses.map((c, i) => `
+    <div class="flex gap-2 items-center">
+      <input type="text" value="${esc(c.name)}" onchange="courses[i].name=this.value;save('courses',courses);renderGPA()" class="flex-1 px-3 py-1.5 rounded-xl border text-xs">
+      <select onchange="courses[i].pts=Number(this.value);save('courses',courses);renderGPA()" class="px-2 py-1.5 rounded-xl border text-xs bg-white">
+        <option value="10" ${c.pts==10?'selected':''}>O</option><option value="9" ${c.pts==9?'selected':''}>A+</option><option value="8" ${c.pts==8?'selected':''}>A</option>
+      </select>
+      <input type="number" value="${c.cr}" onchange="courses[i].cr=Number(this.value);save('courses',courses);renderGPA()" class="w-14 px-2 py-1.5 rounded-xl border text-xs">
+      <button onclick="courses.splice(${i},1);save('courses',courses);renderGPA()" class="text-rose-500 font-bold">✕</button>
+    </div>
+  `).join('');
+  let p = 0, cr = 0; courses.forEach(c => { p += c.pts * c.cr; cr += c.cr; });
+  $('gpa-out').textContent = `GPA: ${cr ? (p/cr).toFixed(2) : '0.00'}`;
+}
+function addCourse() { courses.push({ name: 'New Course', pts: 9, cr: 3 }); save('courses', courses); renderGPA(); }
+
+let exams = load('exams', [{ name: 'Data Structures CAT-2', date: '2026-11-12' }]);
+function renderExams() {
+  $('exam-list').innerHTML = exams.map((e, i) => `<li class="flex justify-between p-2 bg-slate-50 rounded-xl border"><span><strong>${esc(e.name)}</strong> (${e.date})</span><button onclick="exams.splice(${i},1);save('exams',exams);renderExams()" class="text-rose-500">✕</button></li>`).join('');
+}
+function addExam() {
+  const n = $('exam-name').value, d =$('exam-date').value; if (!n || !d) return;
+  exams.push({ name: n, date: d }); save('exams', exams); renderExams(); $('exam-name').value = '';$('exam-date').value = '';
+}
+
+// Culture, Merch & AI Moderated Hype Wall
+let hypes = load('hypes', ['Java Green coffee hits different during 8 AM lectures ☕', 'Good luck everyone for Hack Devengers finals! 🚀']);
+function renderHypes() {
+  $('hype-list').innerHTML = hypes.map(h => `<div class="p-2.5 bg-white rounded-xl border">${esc(h)}</div>`).join('');
+}
+function postHype() {
+  const v = $('hype-input').value.trim(); if (!v) return;
+  const toxicWords = ['hate', 'idiot', 'stupid', 'abuse', 'worst'];
+  if (toxicWords.some(w => v.toLowerCase().includes(w))) {
+    toast('⚠️ AI Filter: Post blocked due to community guidelines violation.');
+    return;
+  }
+  hypes.unshift(v); save('hypes', hypes); renderHypes(); $('hype-input').value = ''; toast('✨ Posted to Hype Wall (AI Verified)');
+}
+
+const merchItems = [
+  { name: 'Official SRM College Hoodie', price: 899, img: 'images/hoodie.jpg', web: 'https://commons.wikimedia.org/wiki/Special:FilePath/Hoodie_green.jpg?width=600', wiki: 'Hoodie', emoji: '🧥' },
+  { name: 'Badminton Racket (Sports Directorate)', price: 450, img: 'images/racket.jpg', web: 'https://commons.wikimedia.org/wiki/Special:FilePath/Badminton_rackets_and_shuttlecock.jpg?width=600', wiki: 'Badminton', emoji: '🏸' }
+];
+function renderMerch() {
+  $('merch-grid').innerHTML = merchItems.map(m => `
+    <div class="p-3 bg-slate-50 rounded-2xl border space-y-2">
+      <div class="h-28 rounded-xl overflow-hidden flex items-center justify-center"><img src="${m.img}" data-web="${m.web}" data-wiki="${m.wiki}" class="w-full h-full object-cover" onerror="imgFail(this,'${m.emoji}')"></div>
+      <div><p class="font-bold text-xs text-slate-900">${m.name}</p><p class="text-orange-600 font-extrabold text-xs">${inr(m.price)}</p></div>
+      <button onclick="toast('Merch booked successfully!')" class="rmp-btn w-full bg-slate-900 text-white py-1.5 rounded-xl text-xs font-semibold">Pre-order</button>
+    </div>
+  `).join('');
+}
+
+let ideas = load('ideas', [{ title: 'Library Book Reservation App', cat: 'Academics & Study', desc: 'Allow online holding of textbooks.' }]);
+function renderIdeas() {
+  $('idea-list').innerHTML = ideas.map(id => `<div class="p-3 bg-orange-50 rounded-2xl border text-xs"><p class="font-bold text-orange-950">${esc(id.title)}</p><p class="text-slate-600">${esc(id.desc)}</p></div>`).join('');
+}
+function submitNewIdea() {
+  const t = $('new-title').value.trim(), c = $('new-category').value, d =$('new-desc').value.trim();
+  if (!t || !d) { toast('Complete all fields'); return; }
+  ideas.push({ title: t, cat: c, desc: d }); save('ideas', ideas); renderIdeas(); $('new-title').value = '';$('new-desc').value = ''; toast('Idea added');
+}
+
+// SOS & Cmd Palette
+function openSOSModal() { $('sos-modal').classList.remove('hidden');$('sos-modal').classList.add('flex'); }
+function closeSOSModal() { $('sos-modal').classList.add('hidden');$('sos-modal').classList.remove('flex'); }
+function triggerEmergencyAlert() { closeSOSModal(); toast('🚨 DISTRESS ALERT BROADCASTED to Campus Security & Wardens!'); }
+
+function openCmdPalette() { $('cmd-palette').classList.remove('hidden'); $('cmd-palette').classList.add('flex');$('cmd-input').focus(); filterCmds(); }
+function closeCmdPalette() { $('cmd-palette').classList.add('hidden');$('cmd-palette').classList.remove('flex'); }
+const cmdCommands = [
+  { label: 'Go to Home Dashboard', tab: 'home' },
+  { label: 'Order Food / Canteen', tab: 'canteen' },
+  { label: 'Bus Radar & Carpool', tab: 'bus' },
+  { label: 'Hostel Portal & Mess Mind', tab: 'hostel' },
+  { label: 'Timetable & Seat Occupancy', tab: 'academic' },
+  { label: 'Peer Study Matcher & Whispers', tab: 'collab' },
+  { label: 'Lost & Found / Events', tab: 'life' },
+  { label: 'Hackathon Finder & Pomodoro', tab: 'career' },
+  { label: 'AI Voice & Assignment Formatter', tab: 'study' },
+  { label: 'PayTrack Ledger & JSON Backup', tab: 'finance' },
+  { label: 'GPA & Target Exam Calculator', tab: 'tools' },
+  { label: 'Emergency SOS Helplines', action: openSOSModal }
+];
+function filterCmds() {
+  const q = $('cmd-input').value.toLowerCase();
+  const res = cmdCommands.filter(c => c.label.toLowerCase().includes(q));
+  $('cmd-results').innerHTML = res.map(r => `
+    <div onclick="${r.tab ? `switchTab('${r.tab}');closeCmdPalette();` : `closeCmdPalette();(${r.action.name})();`}" class="p-3 hover:bg-orange-50 rounded-xl cursor-pointer font-semibold text-slate-800 flex justify-between items-center">
+      <span>${r.label}</span><span class="text-[10px] text-slate-400">Jump ↵</span>
+    </div>
+  `).join('');
+}
+document.addEventListener('keydown', e => {
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); openCmdPalette(); }
+  if (e.key === 'Escape') { closeCmdPalette(); closeModal(); closeSOSModal(); }
+});
+
+// Profile & Home
+let student = load('student', { name: 'Student', roll: '22CS1001', dept: 'CSE Core', year: '1st Year', sec: 'Section C', mode: 'Hostel', email: 'student@campusnex.edu', mentor: 'Dr. Mentor' });
+let subjAtt = load('subj_att', [{ name: 'Data Structures', a: 38, h: 42 }, { name: 'Operating Systems', a: 30, h: 40 }]);
+
+function toggleProfileEdit() {
+  const box = $('profile-edit'); box.classList.toggle('hidden');
+  if (!box.classList.contains('hidden')) {
+    $('pf-name').value = student.name; $('pf-roll').value = student.roll;
+    $('pf-dept').value = student.dept; $('pf-year').value = student.year;
+    $('pf-sec').value = student.sec; $('pf-mode').value = student.mode;
+    $('pf-email').value = student.email; $('pf-mentor').value = student.mentor;
+  }
+}
+function saveProfile() {
+  student = { name: $('pf-name').value.trim() || 'Student', roll:$('pf-roll').value.trim(), dept: $('pf-dept').value, year:$('pf-year').value, sec: $('pf-sec').value, mode:$('pf-mode').value, email: $('pf-email').value.trim(), mentor:$('pf-mentor').value.trim() };
+  save('student', student); $('profile-edit').classList.add('hidden'); renderHome(); toast('Profile updated');
+}
+function markAtt(i, p) { subjAtt[i].h++; if(p) subjAtt[i].a++; save('subj_att', subjAtt); renderHome(); }
+
+function renderHome() {
+  const A = subjAtt.reduce((s,x)=>s+x.a,0), H = subjAtt.reduce((s,x)=>s+x.h,0), overall = H ? (A/H)*100 : 0;
+  $('home-date').textContent = new Date().toLocaleDateString('en-IN', {weekday:'long', day:'numeric', month:'long'});$('home-greet').textContent = 'Hello'; $('home-name').textContent = student.name.split(' ')[0];$('home-sub').textContent = `${student.dept} • ${student.year} • ${student.sec}`;
+
+  $('home-stats').innerHTML = `
+    <div class="bg-white p-5 rounded-3xl border shadow-xs"><p class="text-xs text-slate-500 font-semibold">Attendance</p><p class="text-2xl font-extrabold text-slate-900 mt-0.5">${overall.toFixed(1)}%</p></div>
+    <div class="bg-white p-5 rounded-3xl border shadow-xs"><p class="text-xs text-slate-500 font-semibold">Streak</p><p class="text-2xl font-extrabold text-orange-600 mt-0.5">5 Days 🔥</p></div>
+    <div class="bg-white p-5 rounded-3xl border shadow-xs"><p class="text-xs text-slate-500 font-semibold">Pending Dues</p><p class="text-2xl font-extrabold text-slate-900 mt-0.5">₹0</p></div>
+    <div class="bg-white p-5 rounded-3xl border shadow-xs"><p class="text-xs text-slate-500 font-semibold">Meals Saved</p><p class="text-2xl font-extrabold text-emerald-600 mt-0.5">${mealsSavedCount} 🌱</p></div>
+  `;
+
+  $('home-profile').innerHTML = `<p class="font-bold text-slate-900">${esc(student.name)} (${esc(student.roll)})</p><p class="text-xs text-slate-500 mt-1">${student.dept} | ${student.mode}</p>`;
+  $('home-att-badge').textContent = `${overall.toFixed(1)}%`;
+  
+  $('home-attendance').innerHTML = subjAtt.map((s, i) => {
+    const p = s.h ? (s.a/s.h)*100 : 0;
+    return `<div class="flex justify-between items-center text-xs"><span>${esc(s.name)}</span><div class="flex items-center gap-2"><span class="font-bold">${p.toFixed(0)}%</span><button onclick="markAtt(${i},true)" class="w-6 h-6 rounded bg-emerald-100 text-emerald-700 font-bold">✓</button></div></div>`;
+  }).join('');
+}
+
+// Auth system
+const getAccounts = () => { try { return JSON.parse(localStorage.getItem('cn_accounts')) || []; } catch { return []; } };
+const setAccounts = a => localStorage.setItem('cn_accounts', JSON.stringify(a));
+const userId = roll => roll.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+
+function showAuthTab(w) {
+  const isL = w === 'login';
+  $('login-form').classList.toggle('hidden', !isL);$('register-form').classList.toggle('hidden', isL);
+}
+async function doRegister(e) {
+  e.preventDefault();
+  const name = $('rg-name').value.trim(), roll = $('rg-roll').value.trim(), email =$('rg-email').value.trim();
+  const id = userId(roll), accounts = getAccounts();
+  if (accounts.some(a => a.id === id)) { alert('Account exists'); return; }
+  accounts.push({ id, name, roll, email, salt: 'abc', hash: '123' }); setAccounts(accounts);
+  localStorage.setItem('cn_session', id); location.reload();
+}
+async function doLogin(e) {
+  e.preventDefault(); const id = userId($('li-id').value);
+  localStorage.setItem('cn_session', id || 'demo'); location.reload();
+}
+function logout() { localStorage.removeItem('cn_session'); location.reload(); }
+
+window.addEventListener('DOMContentLoaded', () => {
+  if (!SESSION) {
+    try { document.body.classList.toggle('dark', localStorage.getItem('cn_theme_dark') === '1'); } catch {}
+    $('auth-screen').classList.remove('hidden'); showAuthTab(getAccounts().length ? 'login' : 'register'); return;
+  }
+  applyDark(); renderAvatar(); renderCanteen(); renderBus(); checkHostelAuth();
+  loadTimetable(); renderOccupancy(); renderWhispers(); renderNotesRepo();
+  renderLostItems(); renderEvents(); renderHackGrid(); renderInternships();
+  filterChat(); renderLedger(); renderGPA(); renderExams(); renderHypes();
+  renderMerch(); renderIdeas(); switchTab(load('tab', 'home')); renderHome();
+});
+</script>
+</body>
+</html>
